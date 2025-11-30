@@ -108,7 +108,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Roles & Permissions', 
     path: '/settings/roles', 
     icon: ShieldCheck,
-    permissionScope: 'Settings' // Controlled by Settings permission
+    permissionScope: 'Settings.Role' // Specifically checks 'Role' submodule under 'Settings'
   },
   { 
     label: 'Settings', 
@@ -178,9 +178,12 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
       // Company Dashboard Access
       p['Company']['Dashboard'] = { read: true, write: false, edit: false, delete: false };
       
-      // Settings: Users & Roles
+      // Settings: Users
       p['Settings']['Users'] = { read: true, write: true, edit: true, delete: false };
-      p['Settings']['Role'] = { read: true, write: false, edit: false, delete: false }; // Can view roles
+      
+      // Role Management is HIDDEN by default for HR. 
+      // Root user must explicitly enable this via the Roles UI if they want HR to manage roles.
+      p['Settings']['Role'] = { read: false, write: false, edit: false, delete: false }; 
       
       // Documents
       p['Documents']['Upload'] = { read: true, write: true, edit: true, delete: true };

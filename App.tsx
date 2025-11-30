@@ -26,26 +26,34 @@ const PlaceholderModule = ({ title }: { title: string }) => (
 );
 
 // Protected Route Component
-const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: UserRole[] }) => {
-  const { isAuthenticated, hasRole } = useAuth();
+const ProtectedRoute: React.FC<React.PropsWithChildren<{ allowedRoles?: UserRole[], permissionScope?: string }>> = ({ children, allowedRoles, permissionScope }) => {
+  const { isAuthenticated, hasRole, hasModuleAccess } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Check Role-based access (Legacy/Fallback)
   if (allowedRoles && !hasRole(allowedRoles)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[50vh]">
-        <h2 className="text-2xl font-bold text-slate-800">Access Denied</h2>
-        <p className="text-slate-500 mt-2">You do not have permission to view this page.</p>
-        <p className="text-xs text-slate-400 mt-4">Required Roles: {allowedRoles.join(', ')}</p>
-      </div>
-    );
+    return <AccessDenied required={allowedRoles.join(', ')} />;
+  }
+
+  // Check Permission-based access (Dynamic)
+  if (permissionScope && !hasModuleAccess(permissionScope)) {
+     return <AccessDenied required={`Permission: ${permissionScope}`} />;
   }
 
   return <>{children}</>;
 };
+
+const AccessDenied = ({ required }: { required: string }) => (
+  <div className="flex flex-col items-center justify-center h-full min-h-[50vh]">
+    <h2 className="text-2xl font-bold text-slate-800">Access Denied</h2>
+    <p className="text-slate-500 mt-2">You do not have permission to view this page.</p>
+    <p className="text-xs text-slate-400 mt-4">Required: {required}</p>
+  </div>
+);
 
 // Inner App to use auth hooks
 const AppRoutes = () => {
@@ -70,34 +78,34 @@ const AppRoutes = () => {
                 
                 {/* Role Specific Routes */}
                 <Route path="/parties" element={
-                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN]}>
+                  <ProtectedRoute permissionScope="Contacts">
                     <Parties />
                   </ProtectedRoute>
                 } />
                 
                 <Route path="/employees" element={
-                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HR]}>
+                  <ProtectedRoute permissionScope="Payroll">
                     <Employees />
                   </ProtectedRoute>
                 } />
 
-                {/* Permissions Management */}
+                {/* Permissions Management - Controlled by 'Settings.Role' permission */}
                 <Route path="/settings/roles" element={
-                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN]}>
+                  <ProtectedRoute permissionScope="Settings.Role">
                     <Roles />
                   </ProtectedRoute>
                 } />
 
                 {/* Modules */}
-                <Route path="/inventory" element={<PlaceholderModule title="Inventory" />} />
-                <Route path="/sales" element={<PlaceholderModule title="Sales" />} />
-                <Route path="/purchases" element={<PlaceholderModule title="Purchases" />} />
-                <Route path="/banking" element={<PlaceholderModule title="Banking" />} />
-                <Route path="/accounting" element={<PlaceholderModule title="Accounting" />} />
-                <Route path="/payroll" element={<PlaceholderModule title="Payroll" />} />
-                <Route path="/reports" element={<PlaceholderModule title="Reports" />} />
-                <Route path="/documents" element={<PlaceholderModule title="Documents" />} />
-                <Route path="/settings" element={<PlaceholderModule title="Settings" />} />
+                <Route path="/inventory" element={<ProtectedRoute permissionScope="Inventory"><PlaceholderModule title="Inventory" /></ProtectedRoute>} />
+                <Route path="/sales" element={<ProtectedRoute permissionScope="Sales"><PlaceholderModule title="Sales" /></ProtectedRoute>} />
+                <Route path="/purchases" element={<ProtectedRoute permissionScope="Purchase"><PlaceholderModule title="Purchases" /></ProtectedRoute>} />
+                <Route path="/banking" element={<ProtectedRoute permissionScope="Cash And Bank"><PlaceholderModule title="Banking" /></ProtectedRoute>} />
+                <Route path="/accounting" element={<ProtectedRoute permissionScope="Accountant"><PlaceholderModule title="Accounting" /></ProtectedRoute>} />
+                <Route path="/payroll" element={<ProtectedRoute permissionScope="Payroll"><PlaceholderModule title="Payroll" /></ProtectedRoute>} />
+                <Route path="/reports" element={<ProtectedRoute permissionScope="Reports"><PlaceholderModule title="Reports" /></ProtectedRoute>} />
+                <Route path="/documents" element={<ProtectedRoute permissionScope="Documents"><PlaceholderModule title="Documents" /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute permissionScope="Settings"><PlaceholderModule title="Settings" /></ProtectedRoute>} />
                 
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>

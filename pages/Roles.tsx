@@ -23,18 +23,15 @@ interface PermissionsState {
 }
 
 // Helper to normalize permissions against the latest PERMISSION_MODULES constant
-// This ensures no undefined errors when modules change
 const normalizePermissions = (rawPermissions: any): PermissionsState => {
   const normalized: PermissionsState = {};
   
   Object.entries(PERMISSION_MODULES).forEach(([category, subModules]) => {
     normalized[category] = {};
     subModules.forEach(sub => {
-      // Check if permission exists in saved data
       if (rawPermissions && rawPermissions[category] && rawPermissions[category][sub]) {
         normalized[category][sub] = { ...rawPermissions[category][sub] };
       } else {
-        // Default to false
         normalized[category][sub] = { read: false, write: false, edit: false, delete: false };
       }
     });
@@ -45,11 +42,12 @@ const normalizePermissions = (rawPermissions: any): PermissionsState => {
 
 export const Roles: React.FC = () => {
   const { showToast } = useToast();
-  const { user, roles, updateRole } = useAuth(); // Use roles from Context
+  const { user, roles, updateRole, getPermission } = useAuth();
   
-  // Check if current user is Root/Super Admin
-  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
-  
+  // Check permission for "Settings.Role" submodule
+  const roleModulePerm = getPermission('Settings.Role');
+  const hasEditPermission = roleModulePerm.edit || roleModulePerm.write;
+
   // View State
   const [view, setView] = useState<'list' | 'edit'>('list');
   
@@ -63,26 +61,23 @@ export const Roles: React.FC = () => {
   // Determine if the *Target* role being edited is the Root/Super Admin role
   const isTargetRootRole = currentRoleId === 'role_super_admin';
 
-  // Permission logic
-  const canEdit = isSuperAdmin && !isTargetRootRole;
+  // Permission logic: User must have edit/write rights on 'Settings.Role' AND cannot edit the Root role
+  const canEdit = hasEditPermission && !isTargetRootRole;
 
   const handleEditRole = (role: RoleDefinition) => {
     setCurrentRoleId(role.id);
     setRoleName(role.name);
     setDescription(role.description);
-    // Normalize permissions to ensure all current modules are present
     setPermissions(normalizePermissions(role.permissions));
     setView('edit');
   };
 
   const handleCreateNew = () => {
-    if (!isSuperAdmin) return;
+    if (!hasEditPermission) return;
     
     setCurrentRoleId(null);
     setRoleName('');
     setDescription('');
-    
-    // Create clean empty state
     setPermissions(normalizePermissions({}));
     setView('edit');
   };
@@ -193,7 +188,6 @@ export const Roles: React.FC = () => {
         permissions
       };
 
-      // Update Global State
       updateRole(newRole);
 
       if (currentRoleId) {
@@ -216,7 +210,7 @@ export const Roles: React.FC = () => {
             <h1 className="text-2xl font-bold text-slate-800">Roles & Permissions</h1>
             <p className="text-slate-500 text-sm">Manage user roles and access levels</p>
           </div>
-          {isSuperAdmin && (
+          {hasEditPermission && (
             <Button onClick={handleCreateNew}>
               <Plus className="w-4 h-4 mr-2" /> Add New Role
             </Button>
@@ -241,7 +235,7 @@ export const Roles: React.FC = () => {
               
               <div className="border-t border-slate-100 pt-4 mt-auto">
                 <Button variant="outline" className="w-full" onClick={() => handleEditRole(role)}>
-                  {isSuperAdmin && role.id !== 'role_super_admin' ? (
+                  {hasEditPermission && role.id !== 'role_super_admin' ? (
                     <>
                       <Edit2 className="w-4 h-4 mr-2" /> Manage Permissions
                     </>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, RoleDefinition } from '../types';
+import { User, UserRole, RoleDefinition, Permission } from '../types';
 import { MOCK_USERS, DEFAULT_ROLES } from '../constants';
 
 interface AuthContextType {
@@ -8,7 +8,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
-  hasModuleAccess: (moduleCategory: string) => boolean;
+  hasModuleAccess: (scope: string) => boolean;
+  getPermission: (scope: string) => Permission;
   roles: RoleDefinition[];
   updateRole: (updatedRole: RoleDefinition) => void;
   updateUserProfile: (data: { name?: string; avatarUrl?: string }) => void;
@@ -121,24 +122,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return allowedRoles.includes(user.role);
   };
 
-  // Check if the current user has READ access to ANY sub-module within a category
-  const hasModuleAccess = (moduleCategory: string): boolean => {
-    if (!user) return false;
+  // Retrieve specific permission object for a scope (e.g. 'Settings.Role')
+  const getPermission = (scope: string): Permission => {
+    const defaultPerm = { read: false, write: false, edit: false, delete: false };
+    if (!user) return defaultPerm;
     
-    // Super Admin has access to everything by default
-    if (user.role === UserRole.SUPER_ADMIN) return true;
+    // Super Admin has full access
+    if (user.role === UserRole.SUPER_ADMIN) {
+      return { read: true, write: true, edit: true, delete: true };
+    }
 
-    // Find the Role Definition for the current user
     const roleId = getRoleIdFromEnum(user.role);
     const userRoleDef = roles.find(r => r.id === roleId);
+    if (!userRoleDef || !userRoleDef.permissions) return defaultPerm;
 
+    // Handle dot notation "Category.SubModule"
+    if (scope.includes('.')) {
+      const [category, subModule] = scope.split('.');
+      return userRoleDef.permissions[category]?.[subModule] || defaultPerm;
+    }
+
+    return defaultPerm;
+  };
+
+  // Check if the current user has READ access to a module or sub-module
+  const hasModuleAccess = (scope: string): boolean => {
+    if (!user) return false;
+    if (user.role === UserRole.SUPER_ADMIN) return true;
+
+    const roleId = getRoleIdFromEnum(user.role);
+    const userRoleDef = roles.find(r => r.id === roleId);
     if (!userRoleDef || !userRoleDef.permissions) return false;
 
-    const categoryPerms = userRoleDef.permissions[moduleCategory];
+    // Handle dot notation "Category.SubModule"
+    if (scope.includes('.')) {
+      const [category, subModule] = scope.split('.');
+      return userRoleDef.permissions[category]?.[subModule]?.read === true;
+    }
+
+    // Handle broad Category check (returns true if ANY submodule is readable)
+    const categoryPerms = userRoleDef.permissions[scope];
     if (!categoryPerms) return false;
 
-    // Check if ANY sub-module has read: true
-    return Object.values(categoryPerms).some(perm => perm.read === true);
+    return Object.values(categoryPerms).some((perm: Permission) => perm.read === true);
   };
 
   return (
@@ -149,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       hasRole, 
       hasModuleAccess,
+      getPermission,
       roles,
       updateRole,
       updateUserProfile
