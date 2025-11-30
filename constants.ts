@@ -197,6 +197,33 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
     })()
   },
   {
+    id: 'role_sales',
+    name: 'Sales Person',
+    description: 'Access to Sales, CRM contacts, and Inventory viewing.',
+    permissions: (() => {
+      const p = createEmptyPermissions();
+      
+      // Dashboard
+      p['Company']['Dashboard'] = { read: true, write: false, edit: false, delete: false };
+      
+      // Sales: Full Access (except maybe delete, but let's give full for now)
+      PERMISSION_MODULES['Sales'].forEach(sub => {
+        p['Sales'][sub] = { read: true, write: true, edit: true, delete: false };
+      });
+
+      // Contacts (Parties): Read/Write to create customers
+      p['Contacts']['Customer'] = { read: true, write: true, edit: true, delete: false };
+      p['Contacts']['Vendor'] = { read: true, write: false, edit: false, delete: false }; // Read-only vendors
+
+      // Inventory: Read only (need to see what to sell)
+      PERMISSION_MODULES['Inventory'].forEach(sub => {
+        p['Inventory'][sub] = { read: true, write: false, edit: false, delete: false };
+      });
+      
+      return p;
+    })()
+  },
+  {
     id: 'role_employee',
     name: 'Employee',
     description: 'Standard access. Can view dashboard and personal profile.',
@@ -265,6 +292,15 @@ export const MOCK_USERS = [
     role: UserRole.HR,
     avatarUrl: 'https://ui-avatars.com/api/?name=HR+Manager&background=ec4899&color=fff',
     organizationIds: ['org_hq', 'org_north']
+  },
+  {
+    id: 'user_sales',
+    name: 'Michael Ross',
+    email: 'sales@joyous.com',
+    password: 'sales1234',
+    role: UserRole.SALES_PERSON,
+    avatarUrl: 'https://ui-avatars.com/api/?name=Michael+Ross&background=f59e0b&color=fff',
+    organizationIds: ['org_hq']
   },
   {
     id: 'user_employee',

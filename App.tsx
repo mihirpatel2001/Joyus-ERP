@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
@@ -9,6 +10,7 @@ import { Parties } from './pages/Parties';
 import { Employees } from './pages/Employees';
 import { Inventory } from './pages/Inventory';
 import { Roles } from './pages/Roles';
+import { Sales } from './pages/Sales';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserRole } from './types';
@@ -104,7 +106,12 @@ const AppRoutes = () => {
                 } />
 
                 {/* Modules */}
-                <Route path="/sales" element={<ProtectedRoute permissionScope="Sales"><PlaceholderModule title="Sales" /></ProtectedRoute>} />
+                <Route path="/sales" element={
+                  <ProtectedRoute permissionScope="Sales">
+                    <Sales />
+                  </ProtectedRoute>
+                } />
+                
                 <Route path="/purchases" element={<ProtectedRoute permissionScope="Purchase"><PlaceholderModule title="Purchases" /></ProtectedRoute>} />
                 <Route path="/banking" element={<ProtectedRoute permissionScope="Cash And Bank"><PlaceholderModule title="Banking" /></ProtectedRoute>} />
                 <Route path="/accounting" element={<ProtectedRoute permissionScope="Accountant"><PlaceholderModule title="Accounting" /></ProtectedRoute>} />

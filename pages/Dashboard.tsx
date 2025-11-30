@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   BarChart, 
@@ -7,13 +8,12 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  LineChart,
-  Line,
   AreaChart,
   Area
 } from 'recharts';
-import { Users, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, DollarSign } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, DollarSign, Users } from 'lucide-react';
 import { Select } from '../components/ui/Select';
+import { useAuth } from '../context/AuthContext';
 
 const stats = [
   { 
@@ -80,6 +80,7 @@ const incomeExpenseData = [
 ];
 
 export const Dashboard: React.FC = () => {
+  const { user } = useAuth();
   const [period, setPeriod] = useState('This Fiscal Year');
 
   return (

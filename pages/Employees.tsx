@@ -1,12 +1,13 @@
+
 import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreVertical, Mail, Briefcase, Calendar, Banknote, History, User, ArrowRight, Building, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Mail, Briefcase, Calendar, Banknote, History, User, ArrowRight, Building, CheckCircle2, AlertCircle, TrendingUp, Percent, BarChart3, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { Checkbox } from '../components/ui/Checkbox';
-import { Employee, SalaryRecord } from '../types';
+import { Employee, SalaryRecord, UserRole } from '../types';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { MOCK_ORGANIZATIONS } from '../constants';
@@ -26,7 +27,10 @@ const mockEmployees: Employee[] = [
     salaryHistory: [
       { id: 'h1', date: '2023-01-15', amount: 75000, frequency: 'Monthly', reason: 'Joining Salary', changedBy: 'Admin' },
       { id: 'h2', date: '2024-01-15', amount: 85000, frequency: 'Monthly', reason: 'Annual Appraisal', changedBy: 'Super Admin' }
-    ]
+    ],
+    commissionRate: 5,
+    totalSales: 2500000, // 25 Lakhs
+    commissionEarned: 125000 // 1.25 Lakhs
   },
   { 
     id: '2', 
@@ -40,7 +44,10 @@ const mockEmployees: Employee[] = [
     payFrequency: 'Monthly',
     salaryHistory: [
       { id: 'h3', date: '2023-03-10', amount: 60000, frequency: 'Monthly', reason: 'Joining Salary', changedBy: 'HR' }
-    ]
+    ],
+    commissionRate: 0,
+    totalSales: 0,
+    commissionEarned: 0
   },
   { 
     id: '3', 
@@ -54,11 +61,26 @@ const mockEmployees: Employee[] = [
     payFrequency: 'Bi-Weekly',
     salaryHistory: []
   },
+  { 
+    id: '4', 
+    name: 'Michael Ross', 
+    email: 'sales@joyous.com', 
+    role: UserRole.SALES_PERSON, // Use Enum value
+    status: 'Active', 
+    joinDate: '2023-06-01',
+    organizationIds: ['org_hq'],
+    currentSalary: 45000,
+    payFrequency: 'Monthly',
+    salaryHistory: [],
+    commissionRate: 8.5,
+    totalSales: 1000000, // 10 Lakhs
+    commissionEarned: 85000
+  },
 ];
 
 export const Employees: React.FC = () => {
   const { showToast } = useToast();
-  const { organizations } = useAuth(); // Get available organizations
+  const { organizations, roles } = useAuth(); // Get available organizations and roles
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -69,7 +91,7 @@ export const Employees: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'salary'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'salary' | 'commission'>('profile');
 
   // Add Employee Form State
   const [formData, setFormData] = useState({
@@ -90,6 +112,12 @@ export const Employees: React.FC = () => {
     reason: ''
   });
 
+  // Commission Form State
+  const [commissionForm, setCommissionForm] = useState({
+    rate: '',
+    totalSales: ''
+  });
+
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           emp.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -103,6 +131,22 @@ export const Employees: React.FC = () => {
   const filteredOrgs = organizations.filter(org => 
     org.name.toLowerCase().includes(orgSearchTerm.toLowerCase())
   );
+
+  // Generate Role Options dynamically from Roles & Permissions module
+  const roleOptions = roles.map(r => ({ label: r.name, value: r.name }));
+
+  // Helper to determine if a role qualifies for Sales Commission
+  const isSalesRole = (role: string) => {
+    return [
+      UserRole.SALES_PERSON, 
+      'Sales Person', 
+      'Manager', 
+      UserRole.ADMIN, 
+      'Admin', 
+      UserRole.SUPER_ADMIN, 
+      'Super Admin'
+    ].includes(role);
+  };
 
   // --- Handlers ---
 
@@ -129,7 +173,10 @@ export const Employees: React.FC = () => {
         organizationIds: formData.organizationIds,
         currentSalary: 0,
         payFrequency: 'Monthly',
-        salaryHistory: []
+        salaryHistory: [],
+        commissionRate: 0,
+        totalSales: 0,
+        commissionEarned: 0
       };
       setEmployees([...employees, newEmp]);
       setIsLoading(false);
@@ -155,6 +202,10 @@ export const Employees: React.FC = () => {
       amount: employee.currentSalary ? employee.currentSalary.toString() : '',
       frequency: employee.payFrequency || 'Monthly',
       reason: ''
+    });
+    setCommissionForm({
+      rate: employee.commissionRate ? employee.commissionRate.toString() : '0',
+      totalSales: employee.totalSales ? employee.totalSales.toString() : '0'
     });
     setActiveTab('profile');
     setIsDetailModalOpen(true);
@@ -196,6 +247,38 @@ export const Employees: React.FC = () => {
       setIsLoading(false);
       setSalaryForm(prev => ({ ...prev, reason: '' })); // Reset reason only
       showToast('Salary updated successfully', 'success');
+    }, 800);
+  };
+
+  const handleUpdateCommission = () => {
+    if (!selectedEmployee) return;
+
+    const rate = Number(commissionForm.rate);
+    const sales = Number(commissionForm.totalSales);
+
+    if (isNaN(rate) || isNaN(sales)) {
+      showToast('Please enter valid numeric values', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    setTimeout(() => {
+      // Calculate Commission
+      const earned = (sales * rate) / 100;
+
+      const updatedEmployee: Employee = {
+        ...selectedEmployee,
+        commissionRate: rate,
+        totalSales: sales,
+        commissionEarned: earned
+      };
+
+      // Update Local State
+      setEmployees(employees.map(e => e.id === selectedEmployee.id ? updatedEmployee : e));
+      setSelectedEmployee(updatedEmployee);
+      
+      setIsLoading(false);
+      showToast('Commission settings updated successfully', 'success');
     }, 800);
   };
 
@@ -244,11 +327,12 @@ export const Employees: React.FC = () => {
                   onChange={setRoleFilter}
                   options={[
                     { label: 'All Roles', value: 'All' },
+                    // Simplified filter options, could also be dynamic if needed
+                    { label: 'Sales Person', value: UserRole.SALES_PERSON },
                     { label: 'Manager', value: 'Manager' },
                     { label: 'Developer', value: 'Developer' },
-                    { label: 'Designer', value: 'Designer' },
-                    { label: 'Employee', value: 'Employee' },
-                    { label: 'Admin', value: 'Admin' },
+                    { label: 'Employee', value: UserRole.EMPLOYEE },
+                    { label: 'Admin', value: UserRole.ADMIN },
                   ]}
                   className="!mb-0"
                 />
@@ -303,7 +387,7 @@ export const Employees: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-slate-700">
                       <Briefcase className="w-4 h-4 text-slate-400" />
-                      {emp.role}
+                      {emp.role === UserRole.SALES_PERSON ? 'Sales Person' : emp.role}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -366,7 +450,7 @@ export const Employees: React.FC = () => {
                 <p className="text-xs text-slate-400 mb-1">Role</p>
                 <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
                   <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                  {emp.role}
+                  {emp.role === UserRole.SALES_PERSON ? 'Sales Person' : emp.role}
                 </div>
               </div>
               <div>
@@ -414,13 +498,7 @@ export const Employees: React.FC = () => {
                 label="Role"
                 value={formData.role}
                 onChange={(val) => setFormData({...formData, role: val})}
-                options={[
-                  { label: 'Manager', value: 'Manager' },
-                  { label: 'Developer', value: 'Developer' },
-                  { label: 'Designer', value: 'Designer' },
-                  { label: 'Employee', value: 'Employee' },
-                  { label: 'Admin', value: 'Admin' },
-                ]}
+                options={roleOptions}
              />
              <Select 
                 label="Status"
@@ -446,7 +524,7 @@ export const Employees: React.FC = () => {
                 placeholder="Search organizations..."
                 value={orgSearchTerm}
                 onChange={(e) => setOrgSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-sm bg-white text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/10"
+                className="bg-white text-slate-900 w-full pl-9 pr-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/10"
               />
             </div>
 
@@ -497,15 +575,15 @@ export const Employees: React.FC = () => {
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
           title={selectedEmployee.name}
-          description={selectedEmployee.role}
+          description={selectedEmployee.role === UserRole.SALES_PERSON ? 'Sales Person' : selectedEmployee.role}
           size="lg"
         >
           <div className="flex flex-col h-[600px]">
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 mb-6">
+            <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">
                <button
                  onClick={() => setActiveTab('profile')}
-                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === 'profile' 
                       ? 'border-primary-600 text-primary-700' 
                       : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -515,7 +593,7 @@ export const Employees: React.FC = () => {
                </button>
                <button
                  onClick={() => setActiveTab('salary')}
-                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === 'salary' 
                       ? 'border-primary-600 text-primary-700' 
                       : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -523,10 +601,24 @@ export const Employees: React.FC = () => {
                >
                  Salary & Payroll
                </button>
+               {/* Only show Commission tab for Sales roles */}
+               {isSalesRole(selectedEmployee.role) && (
+                 <button
+                   onClick={() => setActiveTab('commission')}
+                   className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === 'commission' 
+                        ? 'border-emerald-600 text-emerald-700' 
+                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                   }`}
+                 >
+                   Commission & Sales
+                 </button>
+               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2">
-               {activeTab === 'profile' ? (
+            <div className="flex-1 overflow-y-auto pr-2 pb-4">
+               {/* --- PROFILE TAB --- */}
+               {activeTab === 'profile' && (
                  <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-6">
                        <div>
@@ -569,8 +661,11 @@ export const Employees: React.FC = () => {
                        </div>
                     </div>
                  </div>
-               ) : (
-                 <div className="space-y-8">
+               )}
+
+               {/* --- SALARY TAB --- */}
+               {activeTab === 'salary' && (
+                 <div className="space-y-8 animate-fadeIn">
                     {/* Current Salary Card */}
                     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white shadow-xl">
                         {/* Decorative Shapes */}
@@ -683,6 +778,88 @@ export const Employees: React.FC = () => {
                              </tbody>
                           </table>
                        </div>
+                    </div>
+                 </div>
+               )}
+
+               {/* --- COMMISSION TAB --- */}
+               {activeTab === 'commission' && isSalesRole(selectedEmployee.role) && (
+                 <div className="space-y-8 animate-fadeIn">
+                    {/* Performance Card */}
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 p-6 text-white shadow-xl">
+                        {/* Decorative Shapes */}
+                        <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl"></div>
+
+                        <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+                            <div>
+                                <div className="flex items-center gap-2 text-emerald-100 mb-2">
+                                    <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm">
+                                        <TrendingUp className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-medium tracking-wide uppercase">Commission Earned</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <h3 className="text-4xl font-bold tracking-tight text-white">
+                                        ₹ {selectedEmployee.commissionEarned?.toLocaleString() || '0'}
+                                    </h3>
+                                    <span className="text-emerald-100 font-medium bg-white/10 px-2 py-0.5 rounded text-sm">
+                                        {selectedEmployee.commissionRate}% Cut
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="flex gap-8 border-t border-white/10 pt-4 sm:border-t-0 sm:border-l sm:pl-8 sm:pt-0">
+                                <div>
+                                    <p className="text-xs font-medium text-emerald-200 uppercase tracking-wider">Total Sales</p>
+                                    <p className="mt-1 text-lg font-semibold text-white">
+                                        ₹ {selectedEmployee.totalSales?.toLocaleString() || '0'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Update Commission Form */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                       <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                         <Percent className="w-4 h-4 text-emerald-600" /> Commission Configuration
+                       </h4>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                          <Input 
+                             label="Commission Rate (%)"
+                             type="percentage"
+                             placeholder="0"
+                             value={commissionForm.rate}
+                             onChange={(e) => setCommissionForm({...commissionForm, rate: e.target.value})}
+                          />
+                          <Input 
+                             label="Total Sales (YTD)"
+                             type="currency"
+                             placeholder="0.00"
+                             value={commissionForm.totalSales}
+                             onChange={(e) => setCommissionForm({...commissionForm, totalSales: e.target.value})}
+                             // In a real app, this might be read-only as it comes from Invoices
+                          />
+                       </div>
+                       <div className="flex justify-end mt-4">
+                          <Button 
+                            onClick={handleUpdateCommission} 
+                            isLoading={isLoading}
+                            className="bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500 shadow-emerald-500/20"
+                          >
+                            <Save className="w-4 h-4 mr-2" /> Update Commission
+                          </Button>
+                       </div>
+                    </div>
+                    
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 flex items-start gap-3">
+                       <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                       <p>
+                         Commission is calculated automatically based on total sales. 
+                         In the future, Total Sales will be linked directly to paid Invoices where this employee is assigned as the salesperson.
+                       </p>
                     </div>
                  </div>
                )}

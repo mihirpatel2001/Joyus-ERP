@@ -6,6 +6,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   HR = 'HR',
   EMPLOYEE = 'EMPLOYEE',
+  SALES_PERSON = 'SALES_PERSON', // Added dedicated Sales Role
 }
 
 export interface Permission {
@@ -100,6 +101,10 @@ export interface Employee {
   currentSalary?: number;
   payFrequency?: 'Monthly' | 'Bi-Weekly' | 'Weekly' | 'Annually';
   salaryHistory?: SalaryRecord[];
+  // Commission & Sales Details
+  commissionRate?: number; // Percentage (e.g., 5.0)
+  totalSales?: number; // Total volume of sales generated (e.g., 1000000)
+  commissionEarned?: number; // Calculated amount
 }
 
 export interface InventoryItem {

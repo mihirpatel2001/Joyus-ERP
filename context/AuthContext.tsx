@@ -25,6 +25,7 @@ const getRoleIdFromEnum = (role: UserRole): string => {
     case UserRole.SUPER_ADMIN: return 'role_super_admin';
     case UserRole.ADMIN: return 'role_admin';
     case UserRole.HR: return 'role_hr';
+    case UserRole.SALES_PERSON: return 'role_sales'; // Mapping Sales Person Enum
     case UserRole.EMPLOYEE: return 'role_employee';
     default: return 'role_employee';
   }
