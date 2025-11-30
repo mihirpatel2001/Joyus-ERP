@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreVertical, Mail, Briefcase, Calendar, Banknote, History, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Filter, MoreVertical, Mail, Briefcase, Calendar, Banknote, History, User, ArrowRight, Building, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
+import { Checkbox } from '../components/ui/Checkbox';
 import { Employee, SalaryRecord } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { MOCK_ORGANIZATIONS } from '../constants';
 
 // Extended Mock Data with Salary Info
 const mockEmployees: Employee[] = [
@@ -17,6 +20,7 @@ const mockEmployees: Employee[] = [
     role: 'Manager', 
     status: 'Active', 
     joinDate: '2023-01-15',
+    organizationIds: ['org_hq', 'org_north', 'org_tech', 'org_apex', 'org_pixel'],
     currentSalary: 85000,
     payFrequency: 'Monthly',
     salaryHistory: [
@@ -31,6 +35,7 @@ const mockEmployees: Employee[] = [
     role: 'Developer', 
     status: 'Active', 
     joinDate: '2023-03-10',
+    organizationIds: ['org_tech'],
     currentSalary: 60000,
     payFrequency: 'Monthly',
     salaryHistory: [
@@ -44,6 +49,7 @@ const mockEmployees: Employee[] = [
     role: 'Designer', 
     status: 'Inactive', 
     joinDate: '2022-11-05',
+    organizationIds: ['org_hq', 'org_north'],
     currentSalary: 55000,
     payFrequency: 'Bi-Weekly',
     salaryHistory: []
@@ -52,6 +58,7 @@ const mockEmployees: Employee[] = [
 
 export const Employees: React.FC = () => {
   const { showToast } = useToast();
+  const { organizations } = useAuth(); // Get available organizations
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -69,8 +76,12 @@ export const Employees: React.FC = () => {
     name: '',
     email: '',
     role: 'Employee',
-    status: 'Active'
+    status: 'Active',
+    organizationIds: [] as string[]
   });
+  
+  // Org Search State for Add Employee Modal
+  const [orgSearchTerm, setOrgSearchTerm] = useState('');
 
   // Salary Update Form State
   const [salaryForm, setSalaryForm] = useState({
@@ -88,11 +99,21 @@ export const Employees: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Filter organizations for the modal based on search
+  const filteredOrgs = organizations.filter(org => 
+    org.name.toLowerCase().includes(orgSearchTerm.toLowerCase())
+  );
+
   // --- Handlers ---
 
   const handleCreateEmployee = () => {
     if (!formData.name || !formData.email) {
       showToast('Please fill in required fields', 'error');
+      return;
+    }
+
+    if (formData.organizationIds.length === 0) {
+      showToast('Please assign at least one organization', 'error');
       return;
     }
 
@@ -105,6 +126,7 @@ export const Employees: React.FC = () => {
         role: formData.role,
         status: formData.status as 'Active' | 'Inactive',
         joinDate: new Date().toISOString().split('T')[0],
+        organizationIds: formData.organizationIds,
         currentSalary: 0,
         payFrequency: 'Monthly',
         salaryHistory: []
@@ -112,9 +134,19 @@ export const Employees: React.FC = () => {
       setEmployees([...employees, newEmp]);
       setIsLoading(false);
       setIsAddModalOpen(false);
-      setFormData({ name: '', email: '', role: 'Employee', status: 'Active' });
+      setFormData({ name: '', email: '', role: 'Employee', status: 'Active', organizationIds: [] });
+      setOrgSearchTerm(''); // Reset search
       showToast('Employee created successfully', 'success');
     }, 800);
+  };
+
+  const toggleOrgSelection = (orgId: string, checked: boolean) => {
+    setFormData(prev => {
+      const newIds = checked 
+        ? [...prev.organizationIds, orgId]
+        : prev.organizationIds.filter(id => id !== orgId);
+      return { ...prev, organizationIds: newIds };
+    });
   };
 
   const openEmployeeDetails = (employee: Employee) => {
@@ -165,6 +197,18 @@ export const Employees: React.FC = () => {
       setSalaryForm(prev => ({ ...prev, reason: '' })); // Reset reason only
       showToast('Salary updated successfully', 'success');
     }, 800);
+  };
+
+  const getOrgName = (id: string) => {
+    const org = MOCK_ORGANIZATIONS.find(o => o.id === id);
+    return org ? org.name : id;
+  };
+
+  const calculateAnnualCTC = (amount: number = 0, frequency: string = 'Monthly') => {
+    if (frequency === 'Monthly') return amount * 12;
+    if (frequency === 'Bi-Weekly') return amount * 26;
+    if (frequency === 'Weekly') return amount * 52;
+    return amount;
   };
 
   return (
@@ -320,23 +364,23 @@ export const Employees: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
               <div>
                 <p className="text-xs text-slate-400 mb-1">Role</p>
-                <div className="flex items-center gap-2 text-slate-700 text-sm">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
                   <Briefcase className="w-3.5 h-3.5 text-slate-400" />
                   {emp.role}
                 </div>
               </div>
               <div>
-                 <p className="text-xs text-slate-400 mb-1">Status</p>
-                 <Badge variant={emp.status === 'Active' ? 'success' : 'neutral'}>
-                    {emp.status}
-                  </Badge>
+                <p className="text-xs text-slate-400 mb-1">Status</p>
+                <Badge variant={emp.status === 'Active' ? 'success' : 'neutral'}>
+                  {emp.status}
+                </Badge>
               </div>
             </div>
           </div>
         ))}
         {filteredEmployees.length === 0 && (
-          <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-slate-500">
-             No employees found matching your filters.
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-200 border-dashed">
+            <p className="text-slate-500">No employees found.</p>
           </div>
         )}
       </div>
@@ -346,289 +390,310 @@ export const Employees: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         title="Add New Employee"
+        size="lg"
       >
-        <form className="space-y-4 mt-2">
-          <Input 
-            label="Full Name" 
-            placeholder="e.g. John Doe"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-          />
-          <Input 
-            label="Email Address" 
-            type="email"
-            placeholder="e.g. john@company.com"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input 
+              label="Full Name" 
+              placeholder="e.g. John Doe"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+            />
+            <Input 
+              label="Email Address" 
+              type="email"
+              placeholder="john@company.com"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+            />
+          </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <Select 
-              label="Role"
-              value={formData.role}
-              onChange={(value) => setFormData({...formData, role: value})}
-              options={[
-                { label: 'Employee', value: 'Employee' },
-                { label: 'Manager', value: 'Manager' },
-                { label: 'Admin', value: 'Admin' },
-                { label: 'Developer', value: 'Developer' },
-              ]}
-            />
-            <Select 
-              label="Status"
-              value={formData.status}
-              onChange={(value) => setFormData({...formData, status: value})}
-              options={[
-                { label: 'Active', value: 'Active' },
-                { label: 'Inactive', value: 'Inactive' },
-              ]}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <Select 
+                label="Role"
+                value={formData.role}
+                onChange={(val) => setFormData({...formData, role: val})}
+                options={[
+                  { label: 'Manager', value: 'Manager' },
+                  { label: 'Developer', value: 'Developer' },
+                  { label: 'Designer', value: 'Designer' },
+                  { label: 'Employee', value: 'Employee' },
+                  { label: 'Admin', value: 'Admin' },
+                ]}
+             />
+             <Select 
+                label="Status"
+                value={formData.status}
+                onChange={(val) => setFormData({...formData, status: val})}
+                options={[
+                  { label: 'Active', value: 'Active' },
+                  { label: 'Inactive', value: 'Inactive' },
+                ]}
+             />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button 
-              className="flex-1" 
-              onClick={(e) => { e.preventDefault(); handleCreateEmployee(); }}
-              isLoading={isLoading}
-            >
-              Create Employee
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1" 
-              onClick={(e) => { e.preventDefault(); setIsAddModalOpen(false); }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Assign Organizations
+            </label>
+            
+            {/* Org Search Input */}
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search organizations..."
+                value={orgSearchTerm}
+                onChange={(e) => setOrgSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-sm bg-white text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/10"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-3 border border-slate-200 rounded-lg bg-slate-50">
+              {filteredOrgs.length > 0 ? (
+                filteredOrgs.map(org => (
+                  <label 
+                    key={org.id} 
+                    className={`
+                      flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
+                      ${formData.organizationIds.includes(org.id) 
+                        ? 'bg-primary-50 border-primary-200 shadow-sm' 
+                        : 'bg-white border-slate-200 hover:border-slate-300'}
+                    `}
+                  >
+                    <Checkbox 
+                      checked={formData.organizationIds.includes(org.id)}
+                      onChange={(checked) => toggleOrgSelection(org.id, checked)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${formData.organizationIds.includes(org.id) ? 'text-primary-800' : 'text-slate-700'}`}>
+                        {org.name}
+                      </p>
+                    </div>
+                  </label>
+                ))
+              ) : (
+                <div className="col-span-full py-4 text-center text-xs text-slate-400 italic">
+                  No organizations found
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Selected: {formData.organizationIds.length} organizations
+            </p>
           </div>
-        </form>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateEmployee} isLoading={isLoading}>Create Employee</Button>
+          </div>
+        </div>
       </Modal>
 
-      {/* Employee Details Modal with Tabs */}
+      {/* Employee Details Modal */}
       {selectedEmployee && (
         <Modal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          title="Employee Details"
-          size="lg" // Larger modal for better table visibility
+          title={selectedEmployee.name}
+          description={selectedEmployee.role}
+          size="lg"
         >
-          {/* Header Section */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-2xl font-bold border-4 border-white shadow-sm">
-              {selectedEmployee.name.charAt(0)}
+          <div className="flex flex-col h-[600px]">
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200 mb-6">
+               <button
+                 onClick={() => setActiveTab('profile')}
+                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'profile' 
+                      ? 'border-primary-600 text-primary-700' 
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                 }`}
+               >
+                 Profile & Access
+               </button>
+               <button
+                 onClick={() => setActiveTab('salary')}
+                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === 'salary' 
+                      ? 'border-primary-600 text-primary-700' 
+                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                 }`}
+               >
+                 Salary & Payroll
+               </button>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-800">{selectedEmployee.name}</h3>
-              <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-                <Briefcase className="w-3.5 h-3.5" /> {selectedEmployee.role}
-                <span>•</span>
-                <Mail className="w-3.5 h-3.5" /> {selectedEmployee.email}
-              </div>
-              <Badge variant={selectedEmployee.status === 'Active' ? 'success' : 'neutral'}>
-                {selectedEmployee.status}
-              </Badge>
-            </div>
-          </div>
 
-          {/* Tabs Navigation */}
-          <div className="flex border-b border-slate-200 mb-6">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'profile' 
-                  ? 'border-primary-600 text-primary-700 bg-primary-50/50' 
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <User className="w-4 h-4" /> Profile
-            </button>
-            <button
-              onClick={() => setActiveTab('salary')}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'salary' 
-                  ? 'border-primary-600 text-primary-700 bg-primary-50/50' 
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <Banknote className="w-4 h-4" /> Salary & Payroll
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="min-h-[300px]">
-            {activeTab === 'profile' && (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-semibold">Email</p>
-                      <p className="text-sm font-medium text-slate-800 truncate">{selectedEmployee.email}</p>
-                   </div>
-                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-semibold">Hire Date</p>
-                      <p className="text-sm font-medium text-slate-800">{new Date(selectedEmployee.joinDate).toLocaleDateString()}</p>
-                   </div>
-                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-semibold">Role</p>
-                      <p className="text-sm font-medium text-slate-800">{selectedEmployee.role}</p>
-                   </div>
-                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-1 font-semibold">Department</p>
-                      <p className="text-sm font-medium text-slate-800">General</p>
-                   </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'salary' && (
-              <div className="space-y-8 animate-fadeIn">
-                
-                {/* Current Salary Overview Card */}
-                <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 p-6 overflow-hidden">
-                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Banknote className="w-32 h-32 text-green-800 transform rotate-12 translate-x-8 -translate-y-8" />
-                   </div>
-                   
-                   <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                     <div>
-                        <p className="text-green-800 text-sm font-bold uppercase tracking-wider mb-2">Current Annual Salary</p>
-                        <h3 className="text-3xl font-extrabold text-green-700 tracking-tight">
-                          {selectedEmployee.currentSalary ? `₹ ${selectedEmployee.currentSalary.toLocaleString()}` : 'Not Set'}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="success" className="bg-green-200/50 border-green-200">
-                             Paid {selectedEmployee.payFrequency}
-                          </Badge>
-                        </div>
-                     </div>
-                     <div className="bg-white/60 backdrop-blur-sm p-4 rounded-lg border border-green-200/50 shadow-sm">
-                        <div className="text-xs text-green-800 font-medium mb-1">Next Pay Date</div>
-                        <div className="text-lg font-bold text-green-900">Oct 31, 2023</div>
-                     </div>
-                   </div>
-                </div>
-
-                {/* Edit Salary Form */}
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                   <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex items-center gap-2">
-                     <EditIcon className="w-4 h-4 text-slate-500" />
-                     <h4 className="text-sm font-bold text-slate-700">Update Salary Configuration</h4>
-                   </div>
-                   
-                   <div className="p-6">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                        <Input 
-                          label="New Amount (₹)" 
-                          type="currency"
-                          placeholder="0.00"
-                          value={salaryForm.amount}
-                          onChange={(e) => setSalaryForm({...salaryForm, amount: e.target.value})}
-                        />
-                        <Select 
-                          label="Pay Frequency"
-                          value={salaryForm.frequency}
-                          onChange={(val) => setSalaryForm({...salaryForm, frequency: val})}
-                          options={[
-                            { label: 'Monthly', value: 'Monthly' },
-                            { label: 'Bi-Weekly', value: 'Bi-Weekly' },
-                            { label: 'Weekly', value: 'Weekly' },
-                            { label: 'Annually', value: 'Annually' },
-                          ]}
-                        />
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="flex-1 overflow-y-auto pr-2">
+               {activeTab === 'profile' ? (
+                 <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
                        <div>
-                         <label className="block text-sm font-medium text-slate-700 mb-1">Effective Date</label>
-                         <input 
-                           type="date"
-                           className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all"
-                           defaultValue={new Date().toISOString().split('T')[0]}
-                         />
+                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Email Address</p>
+                          <p className="text-slate-800 font-medium flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-slate-400" /> {selectedEmployee.email}
+                          </p>
+                       </div>
+                       <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Join Date</p>
+                          <p className="text-slate-800 font-medium flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-slate-400" /> {selectedEmployee.joinDate}
+                          </p>
+                       </div>
+                       <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Status</p>
+                          <Badge variant={selectedEmployee.status === 'Active' ? 'success' : 'neutral'}>
+                            {selectedEmployee.status}
+                          </Badge>
+                       </div>
+                    </div>
+
+                    <div>
+                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">Assigned Organizations</p>
+                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                         {selectedEmployee.organizationIds && selectedEmployee.organizationIds.length > 0 ? (
+                           <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto custom-scrollbar">
+                             {selectedEmployee.organizationIds.map(orgId => (
+                               <div key={orgId} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                                  <Building className="w-3.5 h-3.5 text-primary-500" />
+                                  <span className="text-sm text-slate-700">{getOrgName(orgId)}</span>
+                               </div>
+                             ))}
+                           </div>
+                         ) : (
+                           <div className="text-slate-400 italic text-sm flex items-center gap-2">
+                             <AlertCircle className="w-4 h-4" /> No organizations assigned
+                           </div>
+                         )}
+                       </div>
+                    </div>
+                 </div>
+               ) : (
+                 <div className="space-y-8">
+                    {/* Current Salary Card */}
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 p-6 text-white shadow-xl">
+                        {/* Decorative Shapes */}
+                        <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 h-64 w-64 rounded-full bg-primary-500/20 blur-3xl"></div>
+
+                        <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+                            <div>
+                                <div className="flex items-center gap-2 text-primary-100 mb-2">
+                                    <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm">
+                                        <Banknote className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-medium tracking-wide uppercase">Current Compensation</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <h3 className="text-4xl font-bold tracking-tight text-white">
+                                        ₹ {selectedEmployee.currentSalary?.toLocaleString() || '0'}
+                                    </h3>
+                                    <span className="text-primary-100 font-medium bg-white/10 px-2 py-0.5 rounded text-sm">
+                                        {selectedEmployee.payFrequency}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="flex gap-8 border-t border-white/10 pt-4 sm:border-t-0 sm:border-l sm:pl-8 sm:pt-0">
+                                <div>
+                                    <p className="text-xs font-medium text-primary-200 uppercase tracking-wider">Annual CTC</p>
+                                    <p className="mt-1 text-lg font-semibold text-white">
+                                        ₹ {calculateAnnualCTC(selectedEmployee.currentSalary, selectedEmployee.payFrequency).toLocaleString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-primary-200 uppercase tracking-wider">Last Revision</p>
+                                    <p className="mt-1 text-lg font-semibold text-white">
+                                         {selectedEmployee.salaryHistory && selectedEmployee.salaryHistory.length > 0 
+                                            ? selectedEmployee.salaryHistory[0].date 
+                                            : 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Update Form */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                       <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                         <Plus className="w-4 h-4 text-primary-600" /> Update Salary
+                       </h4>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                          <Input 
+                             label="New Amount"
+                             type="currency"
+                             placeholder="0.00"
+                             value={salaryForm.amount}
+                             onChange={(e) => setSalaryForm({...salaryForm, amount: e.target.value})}
+                          />
+                          <Select 
+                             label="Frequency"
+                             value={salaryForm.frequency}
+                             onChange={(val) => setSalaryForm({...salaryForm, frequency: val})}
+                             options={[
+                               { label: 'Monthly', value: 'Monthly' },
+                               { label: 'Bi-Weekly', value: 'Bi-Weekly' },
+                               { label: 'Weekly', value: 'Weekly' },
+                               { label: 'Annually', value: 'Annually' },
+                             ]}
+                          />
                        </div>
                        <Input 
-                          label="Reason for Adjustment"
+                          label="Reason for Change"
                           placeholder="e.g. Annual Appraisal, Promotion"
                           value={salaryForm.reason}
                           onChange={(e) => setSalaryForm({...salaryForm, reason: e.target.value})}
                        />
-                     </div>
-                     <div className="flex justify-end">
-                        <Button onClick={handleUpdateSalary} isLoading={isLoading}>
-                           Update Salary Record
-                        </Button>
-                     </div>
-                   </div>
-                </div>
+                       <div className="flex justify-end mt-4">
+                          <Button onClick={handleUpdateSalary} isLoading={isLoading}>Update Salary</Button>
+                       </div>
+                    </div>
 
-                {/* History Table */}
-                <div>
-                   <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2 px-1">
-                     <History className="w-4 h-4" /> Compensation History
-                   </h4>
-                   <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                           <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                              <tr>
-                                 <th className="px-6 py-3 whitespace-nowrap w-32">Effective Date</th>
-                                 <th className="px-6 py-3 whitespace-nowrap w-40 text-right">Amount</th>
-                                 <th className="px-6 py-3 whitespace-nowrap w-32">Frequency</th>
-                                 <th className="px-6 py-3 whitespace-nowrap">Reason</th>
-                              </tr>
-                           </thead>
-                           <tbody className="divide-y divide-slate-100 bg-white">
-                              {selectedEmployee.salaryHistory && selectedEmployee.salaryHistory.length > 0 ? (
-                                 selectedEmployee.salaryHistory.map((rec) => (
-                                   <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                                      <td className="px-6 py-4 text-slate-600">
-                                        {new Date(rec.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                      </td>
-                                      <td className="px-6 py-4 font-bold text-slate-800 text-right font-mono">
-                                        ₹ {rec.amount.toLocaleString()}
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <Badge variant="neutral" className="bg-slate-100 text-slate-600 border-slate-200">
-                                          {rec.frequency}
-                                        </Badge>
-                                      </td>
-                                      <td className="px-6 py-4 text-slate-500">
-                                        {rec.reason}
+                    {/* History Table */}
+                    <div>
+                       <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                         <History className="w-4 h-4 text-slate-500" /> Salary History
+                       </h4>
+                       <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                <tr>
+                                   <th className="px-4 py-3 text-left font-medium">Date</th>
+                                   <th className="px-4 py-3 text-left font-medium">Reason</th>
+                                   <th className="px-4 py-3 text-right font-medium">Amount</th>
+                                </tr>
+                             </thead>
+                             <tbody className="divide-y divide-slate-100">
+                                {(selectedEmployee.salaryHistory || []).map(record => (
+                                  <tr key={record.id} className="hover:bg-slate-50/50">
+                                     <td className="px-4 py-3 text-slate-600">{record.date}</td>
+                                     <td className="px-4 py-3 text-slate-800 font-medium">{record.reason}</td>
+                                     <td className="px-4 py-3 text-right font-bold text-slate-700">₹ {record.amount.toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                                {(!selectedEmployee.salaryHistory || selectedEmployee.salaryHistory.length === 0) && (
+                                   <tr>
+                                      <td colSpan={3} className="px-4 py-6 text-center text-slate-400 italic">
+                                         No salary history available.
                                       </td>
                                    </tr>
-                                 ))
-                              ) : (
-                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                                       <div className="flex flex-col items-center gap-2">
-                                          <div className="p-3 bg-slate-50 rounded-full">
-                                            <History className="w-6 h-6 text-slate-300" />
-                                          </div>
-                                          <p>No salary history available</p>
-                                       </div>
-                                    </td>
-                                 </tr>
-                              )}
-                           </tbody>
-                        </table>
-                      </div>
-                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-8 flex justify-end pt-5 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>
-              Close
-            </Button>
+                                )}
+                             </tbody>
+                          </table>
+                       </div>
+                    </div>
+                 </div>
+               )}
+            </div>
+            
+            <div className="pt-6 mt-2 border-t border-slate-100 flex justify-end">
+               <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>Close</Button>
+            </div>
           </div>
         </Modal>
       )}
     </div>
   );
 };
-
-// Helper icon
-const EditIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-);

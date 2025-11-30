@@ -15,7 +15,7 @@ import {
   UserPlus,
   ShieldCheck
 } from 'lucide-react';
-import { NavItem, UserRole, RoleDefinition } from './types';
+import { NavItem, UserRole, RoleDefinition, Organization } from './types';
 
 export const APP_NAME = "Joyous ERP";
 
@@ -209,6 +209,33 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
   }
 ];
 
+// Mock Organizations - Expanded list for testing
+export const MOCK_ORGANIZATIONS: Organization[] = [
+  // Existing
+  { id: 'org_hq', name: 'Joyous Industries HQ', address: 'Mumbai, India' },
+  { id: 'org_north', name: 'Joyous North Branch', address: 'Delhi, India' },
+  { id: 'org_tech', name: 'Joyous Tech Division', address: 'Bangalore, India' },
+  
+  // New Additions
+  { id: 'org_apex', name: 'Apex Innovations Ltd', address: 'Pune, India' },
+  { id: 'org_global', name: 'Global Logistics Solutions', address: 'Chennai, India' },
+  { id: 'org_quantum', name: 'Quantum Systems Inc.', address: 'Hyderabad, India' },
+  { id: 'org_green', name: 'GreenLeaf AgroTech', address: 'Nashik, India' },
+  { id: 'org_urban', name: 'Urban Construct Builders', address: 'Ahmedabad, India' },
+  { id: 'org_medi', name: 'MediCare Health Services', address: 'Kolkata, India' },
+  { id: 'org_blue', name: 'BlueOcean Shipping', address: 'Kochi, India' },
+  { id: 'org_stellar', name: 'Stellar Marketing Group', address: 'Gurgaon, India' },
+  { id: 'org_prime', name: 'Prime Retail Outlets', address: 'Mumbai, India' },
+  { id: 'org_fusion', name: 'Fusion Energy Labs', address: 'Noida, India' },
+  { id: 'org_vertex', name: 'Vertex Financial Group', address: 'Mumbai, India' },
+  { id: 'org_silver', name: 'SilverStone Manufacturing', address: 'Surat, India' },
+  { id: 'org_nexgen', name: 'NexGen Robotics', address: 'Bangalore, India' },
+  { id: 'org_pacific', name: 'Pacific Trade House', address: 'Visakhapatnam, India' },
+  { id: 'org_rapid', name: 'Rapid Delivery Services', address: 'Indore, India' },
+  { id: 'org_elite', name: 'Elite Hospitality Group', address: 'Goa, India' },
+  { id: 'org_pixel', name: 'Creative Pixel Studio', address: 'Jaipur, India' }
+];
+
 // Mock Users for Authentication
 export const MOCK_USERS = [
   {
@@ -217,7 +244,9 @@ export const MOCK_USERS = [
     email: 'root@joyous.com',
     password: 'root1234',
     role: UserRole.SUPER_ADMIN,
-    avatarUrl: 'https://ui-avatars.com/api/?name=Super+Admin&background=0ea5e9&color=fff'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Super+Admin&background=0ea5e9&color=fff',
+    // Root user has access to ALL mock organizations
+    organizationIds: MOCK_ORGANIZATIONS.map(org => org.id)
   },
   {
     id: 'user_admin',
@@ -225,7 +254,8 @@ export const MOCK_USERS = [
     email: 'admin@joyous.com',
     password: 'admin1234',
     role: UserRole.ADMIN,
-    avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff'
+    avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff',
+    organizationIds: ['org_hq', 'org_apex', 'org_global', 'org_quantum']
   },
   {
     id: 'user_hr',
@@ -233,7 +263,8 @@ export const MOCK_USERS = [
     email: 'hr@joyous.com',
     password: 'hr123456',
     role: UserRole.HR,
-    avatarUrl: 'https://ui-avatars.com/api/?name=HR+Manager&background=ec4899&color=fff'
+    avatarUrl: 'https://ui-avatars.com/api/?name=HR+Manager&background=ec4899&color=fff',
+    organizationIds: ['org_hq', 'org_north']
   },
   {
     id: 'user_employee',
@@ -241,6 +272,7 @@ export const MOCK_USERS = [
     email: 'emp@joyous.com',
     password: 'emp12345',
     role: UserRole.EMPLOYEE,
-    avatarUrl: 'https://ui-avatars.com/api/?name=John+Doe&background=22c55e&color=fff'
+    avatarUrl: 'https://ui-avatars.com/api/?name=John+Doe&background=22c55e&color=fff',
+    organizationIds: ['org_hq']
   }
 ];

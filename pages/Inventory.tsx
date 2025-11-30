@@ -495,7 +495,11 @@ export const Inventory: React.FC = () => {
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 py-2">
             <div className="py-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Inventory Start Date</label>
-                <input type="date" className="w-full px-3 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-primary-500" disabled={!prefs.trackInventory} />
+                <input 
+                  type="date" 
+                  className="w-full px-3 py-1.5 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
+                  disabled={!prefs.trackInventory} 
+                />
             </div>
             <Switch label="Group" checked={prefs.group} onChange={(v) => setPrefs({...prefs, group: v})} />
           </div>

@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hexagon, Info } from 'lucide-react';
+import { Hexagon, Info, Building, Search, ArrowRight } from 'lucide-react';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { User, Organization } from '../types';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { login } = useAuth();
+  const { verifyCredentials, login, organizations } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({ email: '', password: '' });
+
+  // Organization Selection State
+  const [showOrgModal, setShowOrgModal] = useState(false);
+  const [matchedUser, setMatchedUser] = useState<User | null>(null);
+  const [availableOrgs, setAvailableOrgs] = useState<Organization[]>([]);
+  const [orgSearchTerm, setOrgSearchTerm] = useState('');
 
   const validate = () => {
     let isValid = true;
@@ -43,18 +51,44 @@ export const Login: React.FC = () => {
     
     // Simulate network delay
     setTimeout(async () => {
-      const success = await login(formData.email, formData.password);
+      // Step 1: Verify Credentials
+      const user = await verifyCredentials(formData.email, formData.password);
       setLoading(false);
 
-      if (success) {
-        showToast('Login successful! Redirecting...', 'success');
-        navigate('/');
+      if (user) {
+        // Credentials valid. Now check Organizations.
+        const userOrgs = organizations.filter(org => user.organizationIds.includes(org.id));
+        
+        if (userOrgs.length > 0) {
+          // User has linked organizations, show selection modal
+          setMatchedUser(user);
+          setAvailableOrgs(userOrgs);
+          setShowOrgModal(true);
+        } else {
+           // Edge case: User has no organizations. Login anyway with null/default? 
+           // For now, let's treat it as a generic login or show error.
+           showToast('No organization linked to this account.', 'error');
+        }
       } else {
         showToast('Invalid email or password', 'error');
-        setErrors(prev => ({ ...prev, password: ' ' })); // Clear password field error visually or trigger generic error
+        setErrors(prev => ({ ...prev, password: ' ' }));
       }
     }, 800);
   };
+
+  const handleOrgSelection = (orgId: string) => {
+    if (matchedUser) {
+      login(matchedUser, orgId);
+      setShowOrgModal(false);
+      showToast('Login successful! Redirecting...', 'success');
+      navigate('/');
+    }
+  };
+
+  const filteredOrgs = availableOrgs.filter(org => 
+    org.name.toLowerCase().includes(orgSearchTerm.toLowerCase()) ||
+    (org.address && org.address.toLowerCase().includes(orgSearchTerm.toLowerCase()))
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">
@@ -101,7 +135,6 @@ export const Login: React.FC = () => {
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-50 text-center">
-            <p className="text-sm font-medium text-slate-600 mb-2">Don't have an account?</p>
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex gap-2 items-start text-left">
               <Info className="w-4 h-4 text-primary-500 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-slate-500 leading-relaxed">
@@ -111,6 +144,59 @@ export const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Organization Selection Modal */}
+      <Modal
+        isOpen={showOrgModal}
+        onClose={() => setShowOrgModal(false)}
+        title="Select Organization"
+        description="Choose the workspace you want to access."
+        size="lg" // Increased size for grid layout
+      >
+        <div className="space-y-4">
+          {/* Search Bar for Orgs */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search organizations..."
+              value={orgSearchTerm}
+              onChange={(e) => setOrgSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 transition-all"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+            {filteredOrgs.length > 0 ? (
+              filteredOrgs.map((org) => (
+                <button
+                  key={org.id}
+                  onClick={() => handleOrgSelection(org.id)}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-500 hover:bg-primary-50/50 transition-all duration-200 group text-left shadow-sm hover:shadow-md"
+                >
+                  <div className="p-2.5 bg-slate-100 rounded-lg group-hover:bg-white text-slate-500 group-hover:text-primary-600 transition-colors shadow-inner">
+                    <Building className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-slate-800 group-hover:text-primary-800 truncate">{org.name}</h4>
+                    <p className="text-xs text-slate-500 truncate">{org.address || 'Headquarters'}</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-400 opacity-0 group-hover:opacity-100 transition-all" />
+                </button>
+              ))
+            ) : (
+              <div className="col-span-full py-8 text-center text-slate-500">
+                <p>No organizations found matching "{orgSearchTerm}"</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-100">
+             Showing {filteredOrgs.length} of {availableOrgs.length} organizations
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

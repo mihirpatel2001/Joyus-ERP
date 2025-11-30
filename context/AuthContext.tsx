@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, RoleDefinition, Permission } from '../types';
-import { MOCK_USERS, DEFAULT_ROLES } from '../constants';
+import { User, UserRole, RoleDefinition, Permission, Organization } from '../types';
+import { MOCK_USERS, DEFAULT_ROLES, MOCK_ORGANIZATIONS } from '../constants';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  organizations: Organization[]; // List of all available organizations
+  verifyCredentials: (email: string, password: string) => Promise<User | null>; // Step 1
+  login: (user: User, orgId: string) => void; // Step 2 (Final)
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   hasModuleAccess: (scope: string) => boolean;
@@ -32,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [roles, setRoles] = useState<RoleDefinition[]>(DEFAULT_ROLES);
+  const [organizations] = useState<Organization[]>(MOCK_ORGANIZATIONS);
 
   // Initialize Roles from LocalStorage or Default
   useEffect(() => {
@@ -51,13 +54,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Step 1: Verify Email/Password only (Returns User object if valid, else null)
+  const verifyCredentials = async (email: string, password: string): Promise<User | null> => {
     const foundUser = MOCK_USERS.find(
       u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
     );
 
     if (foundUser) {
-      // Check if we have updated info in local storage for this email (simulating DB persistence)
+       // Check if we have updated info in local storage for this email (simulating DB persistence)
       const storedUsersRaw = localStorage.getItem('joyous_users_db');
       let userData = { ...foundUser };
 
@@ -67,22 +71,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userData = { ...userData, ...storedUsers[foundUser.id] };
         }
       }
-
-      const userSession: User = {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role,
-        avatarUrl: userData.avatarUrl
-      };
-
-      setUser(userSession);
-      setIsAuthenticated(true);
-      localStorage.setItem('joyous_user', JSON.stringify(userSession));
-      return true;
+      return userData as User;
     }
+    return null;
+  };
 
-    return false;
+  // Step 2: Finalize Login with Selected Organization
+  const login = (userData: User, orgId: string) => {
+    const userSession: User = {
+      ...userData,
+      currentOrganizationId: orgId
+    };
+
+    setUser(userSession);
+    setIsAuthenticated(true);
+    localStorage.setItem('joyous_user', JSON.stringify(userSession));
   };
 
   const logout = () => {
@@ -171,6 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{ 
       user, 
       isAuthenticated, 
+      organizations,
+      verifyCredentials,
       login, 
       logout, 
       hasRole, 

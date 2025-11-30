@@ -28,12 +28,20 @@ export interface RoleDefinition {
   };
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  address?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   avatarUrl?: string;
+  organizationIds: string[]; // User belongs to these orgs
+  currentOrganizationId?: string; // Currently logged into this org
 }
 
 export interface NavItem {
@@ -87,6 +95,7 @@ export interface Employee {
   role: string;
   status: 'Active' | 'Inactive';
   joinDate: string;
+  organizationIds?: string[];
   // Salary Details
   currentSalary?: number;
   payFrequency?: 'Monthly' | 'Bi-Weekly' | 'Weekly' | 'Annually';
