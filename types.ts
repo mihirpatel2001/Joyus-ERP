@@ -92,3 +92,19 @@ export interface Employee {
   payFrequency?: 'Monthly' | 'Bi-Weekly' | 'Weekly' | 'Annually';
   salaryHistory?: SalaryRecord[];
 }
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  hsn?: string;
+  unit: string;
+  type: 'Goods' | 'Service';
+  salesRate?: number;
+  purchaseRate?: number;
+  stockOnHand: number;
+  salesAccount?: string;
+  purchaseAccount?: string;
+  tax?: string;
+}

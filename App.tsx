@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Profile } from './pages/Profile';
 import { Parties } from './pages/Parties';
 import { Employees } from './pages/Employees';
+import { Inventory } from './pages/Inventory';
 import { Roles } from './pages/Roles';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -88,6 +89,12 @@ const AppRoutes = () => {
                     <Employees />
                   </ProtectedRoute>
                 } />
+                
+                <Route path="/inventory" element={
+                  <ProtectedRoute permissionScope="Inventory">
+                    <Inventory />
+                  </ProtectedRoute>
+                } />
 
                 {/* Permissions Management - Controlled by 'Settings.Role' permission */}
                 <Route path="/settings/roles" element={
@@ -97,7 +104,6 @@ const AppRoutes = () => {
                 } />
 
                 {/* Modules */}
-                <Route path="/inventory" element={<ProtectedRoute permissionScope="Inventory"><PlaceholderModule title="Inventory" /></ProtectedRoute>} />
                 <Route path="/sales" element={<ProtectedRoute permissionScope="Sales"><PlaceholderModule title="Sales" /></ProtectedRoute>} />
                 <Route path="/purchases" element={<ProtectedRoute permissionScope="Purchase"><PlaceholderModule title="Purchases" /></ProtectedRoute>} />
                 <Route path="/banking" element={<ProtectedRoute permissionScope="Cash And Bank"><PlaceholderModule title="Banking" /></ProtectedRoute>} />
