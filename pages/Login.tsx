@@ -91,19 +91,19 @@ export const Login: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-white rounded-xl shadow-md">
+            <div className="p-3 bg-surface rounded-xl shadow-md">
               <Hexagon className="w-10 h-10 text-primary-600 fill-primary-50" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Welcome back</h2>
-          <p className="text-slate-500 mt-2">Sign in to Joyous Industries CRM</p>
+          <h2 className="text-3xl font-bold text-content-strong tracking-tight">Welcome back</h2>
+          <p className="text-content-sub mt-2">Sign in to Joyous Industries CRM</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+        <div className="bg-surface rounded-2xl shadow-xl border border-divider p-8">
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <Input
               label="Email Address"
@@ -134,10 +134,10 @@ export const Login: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-50 text-center">
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex gap-2 items-start text-left">
+          <div className="mt-8 pt-6 border-t border-divider text-center">
+            <div className="bg-surface-highlight p-3 rounded-lg border border-divider flex gap-2 items-start text-left">
               <Info className="w-4 h-4 text-primary-500 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-xs text-content-sub leading-relaxed">
                 Contact an authorized person to register.
               </p>
             </div>
@@ -156,13 +156,13 @@ export const Login: React.FC = () => {
         <div className="space-y-4">
           {/* Search Bar for Orgs */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-sub" />
             <input
               type="text"
               placeholder="Search organizations..."
               value={orgSearchTerm}
               onChange={(e) => setOrgSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-surface-highlight border border-divider rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 transition-all text-content-strong"
               autoFocus
             />
           </div>
@@ -173,26 +173,26 @@ export const Login: React.FC = () => {
                 <button
                   key={org.id}
                   onClick={() => handleOrgSelection(org.id)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-500 hover:bg-primary-50/50 transition-all duration-200 group text-left shadow-sm hover:shadow-md"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-divider hover:border-primary-500 hover:bg-primary-50/50 transition-all duration-200 group text-left shadow-sm hover:shadow-md"
                 >
-                  <div className="p-2.5 bg-slate-100 rounded-lg group-hover:bg-white text-slate-500 group-hover:text-primary-600 transition-colors shadow-inner">
+                  <div className="p-2.5 bg-surface-highlight rounded-lg group-hover:bg-surface text-content-sub group-hover:text-primary-600 transition-colors shadow-inner">
                     <Building className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-slate-800 group-hover:text-primary-800 truncate">{org.name}</h4>
-                    <p className="text-xs text-slate-500 truncate">{org.address || 'Headquarters'}</p>
+                    <h4 className="font-semibold text-content-strong group-hover:text-primary-800 truncate">{org.name}</h4>
+                    <p className="text-xs text-content-sub truncate">{org.address || 'Headquarters'}</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-400 opacity-0 group-hover:opacity-100 transition-all" />
+                  <ArrowRight className="w-4 h-4 text-input group-hover:text-primary-400 opacity-0 group-hover:opacity-100 transition-all" />
                 </button>
               ))
             ) : (
-              <div className="col-span-full py-8 text-center text-slate-500">
+              <div className="col-span-full py-8 text-center text-content-sub">
                 <p>No organizations found matching "{orgSearchTerm}"</p>
               </div>
             )}
           </div>
           
-          <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-100">
+          <div className="pt-2 text-center text-xs text-content-sub border-t border-divider">
              Showing {filteredOrgs.length} of {availableOrgs.length} organizations
           </div>
         </div>

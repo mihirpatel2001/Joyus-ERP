@@ -14,6 +14,7 @@
               sans: ['Inter', 'sans-serif'],
             },
             colors: {
+              // Brand Colors (Primary)
               primary: {
                 50: '#f0f9ff',
                 100: '#e0f2fe',
@@ -25,7 +26,27 @@
                 700: '#0369a1',
                 800: '#075985',
                 900: '#0c4a6e',
-              }
+              },
+              // Semantic Tokens
+              canvas: '#f8fafc',       // Main App Background (was slate-50)
+              surface: {
+                DEFAULT: '#ffffff',    // Card/Modal/Sidebar Background (was white)
+                highlight: '#f1f5f9',  // Hover states (was slate-50/100)
+              },
+              content: {
+                strong: '#0f172a',     // Headings (was slate-900/800)
+                normal: '#334155',     // Body text (was slate-700/600)
+                sub: '#64748b',        // Metadata/Icons (was slate-500/400)
+                inverted: '#ffffff',   // Text on dark backgrounds
+              },
+              divider: '#e2e8f0',      // Separators/Borders (was slate-200)
+              input: '#cbd5e1',        // Input borders (was slate-300)
+              
+              // Status Colors
+              success: { DEFAULT: '#22c55e', bg: '#dcfce7', text: '#15803d' }, // Green
+              warning: { DEFAULT: '#f59e0b', bg: '#fef3c7', text: '#b45309' }, // Amber
+              danger:  { DEFAULT: '#ef4444', bg: '#fee2e2', text: '#b91c1c' }, // Red
+              info:    { DEFAULT: '#3b82f6', bg: '#dbeafe', text: '#1d4ed8' }, // Blue
             }
           },
         },
@@ -39,13 +60,13 @@
       }
       
       ::-webkit-scrollbar-track {
-        background: #f8fafc; /* Matches slate-50 background */
+        background: #f8fafc; /* Matches canvas */
       }
       
       ::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1; /* slate-300 */
+        background-color: #cbd5e1; /* Matches input border */
         border-radius: 20px;
-        border: 3px solid #f8fafc; /* Creates padding effect */
+        border: 3px solid #f8fafc; 
       }
       
       ::-webkit-scrollbar-thumb:hover {
@@ -99,7 +120,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased">
+  <body class="bg-canvas text-content-strong font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

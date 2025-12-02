@@ -48,21 +48,21 @@ export const Modal: React.FC<ModalProps> = ({
       />
 
       {/* Modal Content */}
-      <div className={`relative bg-white rounded-xl shadow-2xl w-full ${maxWidths[size]} flex flex-col max-h-[90vh] transform transition-all scale-100 animate-fadeIn`}>
+      <div className={`relative bg-surface rounded-xl shadow-2xl w-full ${maxWidths[size]} flex flex-col max-h-[90vh] transform transition-all scale-100 animate-fadeIn`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+        <div className="flex items-center justify-between p-6 border-b border-divider">
           <div className="flex items-center gap-3 pr-8">
             {variant === 'danger' && (
-              <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
-                <AlertTriangle className="h-6 w-6 text-red-600" />
+              <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-danger-bg">
+                <AlertTriangle className="h-6 w-6 text-danger" />
               </div>
             )}
             <div>
-              <h3 className="text-xl font-bold text-slate-900 leading-tight">
+              <h3 className="text-xl font-bold text-content-strong leading-tight">
                 {title}
               </h3>
               {description && (
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-content-sub mt-1">
                   {description}
                 </p>
               )}
@@ -70,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors"
+            className="text-content-sub hover:text-content-strong hover:bg-surface-highlight p-2 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -83,7 +83,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Footer (only if confirm action exists) */}
         {onConfirm && (
-          <div className="p-6 border-t border-slate-100 bg-slate-50 rounded-b-xl flex flex-col sm:flex-row-reverse gap-3">
+          <div className="p-6 border-t border-divider bg-surface-highlight/50 rounded-b-xl flex flex-col sm:flex-row-reverse gap-3">
             <Button 
               variant={variant} 
               onClick={onConfirm}

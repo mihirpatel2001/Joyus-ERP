@@ -42,21 +42,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar Container */}
       <aside 
         className={`
-          fixed top-0 left-0 z-50 h-screen w-64 bg-white border-r border-slate-200 shadow-xl lg:shadow-none transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col
+          fixed top-0 left-0 z-50 h-screen w-64 bg-surface border-r border-divider shadow-xl lg:shadow-none transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Logo Area */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-divider flex-shrink-0">
           <div className="flex items-center gap-2 text-primary-600">
             <Hexagon className="w-8 h-8 fill-primary-100" />
-            <span className="text-lg font-bold tracking-tight text-slate-800 leading-tight">
+            <span className="text-lg font-bold tracking-tight text-content-strong leading-tight">
               {APP_NAME}
             </span>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 lg:hidden"
+            className="p-1 rounded-md text-content-sub hover:text-content-strong hover:bg-surface-highlight lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
@@ -76,16 +76,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group
                     ${isActive 
                       ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-200' 
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      : 'text-content-normal hover:bg-surface-highlight hover:text-content-strong'
                     }
                   `}
                 >
-                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-primary-600' : 'text-content-sub group-hover:text-content-normal'}`} />
                   <span className="flex-1 truncate">{item.label}</span>
                   {item.badge ? (
                     <span className={`
                       px-2 py-0.5 text-xs font-semibold rounded-full
-                      ${isActive ? 'bg-primary-200 text-primary-800' : 'bg-slate-100 text-slate-600'}
+                      ${isActive ? 'bg-primary-200 text-primary-800' : 'bg-surface-highlight text-content-sub'}
                     `}>
                       {item.badge}
                     </span>
@@ -97,8 +97,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer Area */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
-          <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg p-4 text-white">
+        <div className="p-4 border-t border-divider bg-surface-highlight/50 flex-shrink-0">
+          <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg p-4 text-content-inverted">
             <h4 className="font-semibold text-sm mb-1">Need Help?</h4>
             <p className="text-xs text-primary-100 mb-3">Contact support for assistance.</p>
             <button className="w-full py-1.5 bg-white/10 hover:bg-white/20 text-xs font-medium rounded transition-colors border border-white/20">

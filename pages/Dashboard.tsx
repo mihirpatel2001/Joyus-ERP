@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   BarChart, 
@@ -22,8 +21,8 @@ const stats = [
     change: '+12.5%', 
     trend: 'up' as const, 
     icon: ArrowDownRight, 
-    color: 'text-green-600', 
-    bg: 'bg-green-100',
+    color: 'text-success', 
+    bg: 'bg-success-bg',
     subtitle: 'Current',
     description: 'Amount to receive'
   },
@@ -33,8 +32,8 @@ const stats = [
     change: '-2.4%', 
     trend: 'down' as const, 
     icon: ArrowUpRight, 
-    color: 'text-red-600', 
-    bg: 'bg-red-100',
+    color: 'text-danger', 
+    bg: 'bg-danger-bg',
     subtitle: 'Overdue: ₹ 1.2L',
     description: 'Amount to pay'
   },
@@ -44,8 +43,8 @@ const stats = [
     change: '+8.2%', 
     trend: 'up' as const, 
     icon: Wallet, 
-    color: 'text-blue-600', 
-    bg: 'bg-blue-100',
+    color: 'text-info', 
+    bg: 'bg-info-bg',
     subtitle: 'Across 4 accounts',
     description: 'Liquidity'
   },
@@ -89,8 +88,8 @@ export const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Financial Overview</h2>
-          <p className="text-slate-500 text-sm">Real-time business insights and performance.</p>
+          <h2 className="text-2xl font-bold text-content-strong">Financial Overview</h2>
+          <p className="text-content-sub text-sm">Real-time business insights and performance.</p>
         </div>
         <div className="w-full sm:w-48">
            <Select
@@ -109,21 +108,21 @@ export const Dashboard: React.FC = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 hover:shadow-md transition-all duration-200">
+          <div key={index} className="bg-surface rounded-xl shadow-sm border border-divider p-4 sm:p-6 hover:shadow-md transition-all duration-200">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-slate-500 text-sm font-medium">{stat.title}</p>
-                <h3 className="text-2xl font-bold text-slate-800 mt-1">{stat.value}</h3>
+                <p className="text-content-sub text-sm font-medium">{stat.title}</p>
+                <h3 className="text-2xl font-bold text-content-strong mt-1">{stat.value}</h3>
               </div>
               <div className={`p-3 rounded-lg ${stat.bg} ${stat.color}`}>
                 <stat.icon className="w-6 h-6" />
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-               <span className={`text-xs font-semibold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'} flex items-center`}>
+            <div className="flex items-center justify-between pt-2 border-t border-divider">
+               <span className={`text-xs font-semibold ${stat.trend === 'up' ? 'text-success' : 'text-danger'} flex items-center`}>
                 {stat.change}
               </span>
-              <span className="text-xs text-slate-400">{stat.subtitle}</span>
+              <span className="text-xs text-content-sub">{stat.subtitle}</span>
             </div>
           </div>
         ))}
@@ -133,11 +132,11 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Cash Flow Chart */}
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0">
+        <div className="lg:col-span-2 bg-surface p-4 sm:p-6 rounded-xl shadow-sm border border-divider min-w-0">
           <div className="flex items-center justify-between mb-6">
             <div>
-                <h3 className="text-lg font-bold text-slate-800">Cash Flow</h3>
-                <p className="text-xs text-slate-500">Inflow vs Outflow over time</p>
+                <h3 className="text-lg font-bold text-content-strong">Cash Flow</h3>
+                <p className="text-xs text-content-sub">Inflow vs Outflow over time</p>
             </div>
           </div>
           <div className="h-80 w-full">
@@ -167,9 +166,9 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Income vs Expense */}
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 min-w-0">
+        <div className="bg-surface p-4 sm:p-6 rounded-xl shadow-sm border border-divider min-w-0">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Income vs Expense</h3>
+            <h3 className="text-lg font-bold text-content-strong">Income vs Expense</h3>
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -190,45 +189,45 @@ export const Dashboard: React.FC = () => {
       
       {/* Top Accounts / Bank Balances */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Bank Accounts</h3>
+          <div className="bg-surface rounded-xl shadow-sm border border-divider p-6">
+              <h3 className="text-lg font-bold text-content-strong mb-4">Bank Accounts</h3>
               <div className="space-y-4">
                   {[
                       { name: 'HDFC Main Account', number: '**** 8821', balance: '₹ 24,50,000' },
                       { name: 'SBI Current Account', number: '**** 1204', balance: '₹ 12,20,000' },
                       { name: 'Petty Cash', number: '-', balance: '₹ 45,000' }
                   ].map((acc, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-lg transition-colors border border-slate-100">
+                      <div key={i} className="flex justify-between items-center p-3 hover:bg-surface-highlight rounded-lg transition-colors border border-divider">
                           <div className="flex items-center gap-3">
-                              <div className="p-2 bg-slate-100 rounded-full text-slate-600">
+                              <div className="p-2 bg-surface-highlight rounded-full text-content-normal">
                                   <CreditCard className="w-5 h-5" />
                               </div>
                               <div>
-                                  <p className="font-medium text-slate-800">{acc.name}</p>
-                                  <p className="text-xs text-slate-500">{acc.number}</p>
+                                  <p className="font-medium text-content-strong">{acc.name}</p>
+                                  <p className="text-xs text-content-sub">{acc.number}</p>
                               </div>
                           </div>
-                          <p className="font-bold text-slate-800">{acc.balance}</p>
+                          <p className="font-bold text-content-strong">{acc.balance}</p>
                       </div>
                   ))}
               </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Pending Tasks</h3>
+          <div className="bg-surface rounded-xl shadow-sm border border-divider p-6">
+              <h3 className="text-lg font-bold text-content-strong mb-4">Pending Tasks</h3>
               <div className="space-y-3">
-                 <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <div className="mt-0.5"><DollarSign className="w-4 h-4 text-orange-600" /></div>
+                 <div className="flex items-start gap-3 p-3 bg-warning-bg rounded-lg border border-warning/20">
+                    <div className="mt-0.5"><DollarSign className="w-4 h-4 text-warning-text" /></div>
                     <div>
-                        <p className="text-sm font-medium text-orange-900">3 Invoices Overdue</p>
-                        <p className="text-xs text-orange-700 mt-1">Total value ₹ 45,000. Follow up with customers.</p>
+                        <p className="text-sm font-medium text-warning-text">3 Invoices Overdue</p>
+                        <p className="text-xs text-warning-text/80 mt-1">Total value ₹ 45,000. Follow up with customers.</p>
                     </div>
                  </div>
-                 <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="mt-0.5"><Users className="w-4 h-4 text-blue-600" /></div>
+                 <div className="flex items-start gap-3 p-3 bg-info-bg rounded-lg border border-info/20">
+                    <div className="mt-0.5"><Users className="w-4 h-4 text-info-text" /></div>
                     <div>
-                        <p className="text-sm font-medium text-blue-900">New Vendor Approval</p>
-                        <p className="text-xs text-blue-700 mt-1">Tech Solutions Ltd requires approval.</p>
+                        <p className="text-sm font-medium text-info-text">New Vendor Approval</p>
+                        <p className="text-xs text-info-text/80 mt-1">Tech Solutions Ltd requires approval.</p>
                     </div>
                  </div>
               </div>

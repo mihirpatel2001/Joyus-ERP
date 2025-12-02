@@ -13,7 +13,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-canvas flex">
       {/* Sidebar Navigation */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -38,8 +38,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-slate-200 py-6 px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-slate-500">
+        <footer className="bg-surface border-t border-divider py-6 px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-content-sub">
             <p>&copy; {new Date().getFullYear()} Joyous Industries. All rights reserved.</p>
             <div className="flex gap-4 mt-2 md:mt-0">
               <a href="#" className="hover:text-primary-600">Privacy Policy</a>
