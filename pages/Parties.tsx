@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, MoreVertical, Download, Phone, Mail, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Search, Filter, Plus, MoreVertical, Download, Phone, Mail, ArrowUpRight, ArrowDownRight, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Party } from '../types';
@@ -90,7 +90,7 @@ export const Parties: React.FC = () => {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex-1 sm:flex-none ${
                   filterType === type 
                     ? 'bg-primary-50 text-primary-700 ring-1 ring-primary-200' 
                     : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
@@ -102,8 +102,8 @@ export const Parties: React.FC = () => {
           </div>
         </div>
 
-        {/* List Table */}
-        <div className="overflow-x-auto">
+        {/* Desktop List Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
               <tr>
@@ -173,6 +173,72 @@ export const Parties: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden">
+          {filteredParties.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {filteredParties.map((party) => (
+                <div key={party.id} className="p-4 space-y-3 bg-white">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold ${
+                        party.type === 'Customer' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {party.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-800">{party.name}</h3>
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded inline-block mt-0.5 ${
+                          party.type === 'Customer' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                        }`}>
+                          {party.type}
+                        </span>
+                      </div>
+                    </div>
+                    <button className="text-slate-400 p-1">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="text-sm text-slate-500 space-y-1 pl-1">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5" /> {party.email}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5" /> {party.phone}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="bg-slate-50 p-2 rounded-lg">
+                      <p className="text-xs text-slate-500 mb-0.5">Receivables</p>
+                      <p className={`font-medium ${party.receivables > 0 ? 'text-green-600' : 'text-slate-700'}`}>
+                        {party.receivables > 0 ? `₹ ${party.receivables.toLocaleString()}` : '-'}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-lg text-right">
+                      <p className="text-xs text-slate-500 mb-0.5">Payables</p>
+                      <p className={`font-medium ${party.payables > 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                        {party.payables > 0 ? `₹ ${party.payables.toLocaleString()}` : '-'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1">
+                    <Badge variant={party.status === 'Active' ? 'success' : 'warning'}>
+                      {party.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center text-slate-500">
+              No parties found matching your search.
+            </div>
+          )}
         </div>
         
         {/* Pagination (Visual only) */}

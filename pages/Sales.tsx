@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   TrendingUp, 
@@ -106,8 +105,8 @@ export const Sales: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200">
-        <div className="flex space-x-8">
+      <div className="border-b border-slate-200 overflow-x-auto">
+        <div className="flex space-x-8 whitespace-nowrap">
            <button
              onClick={() => setActiveTab('overview')}
              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -205,7 +204,8 @@ export const Sales: React.FC = () => {
                  </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
                  <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
                        <tr>
@@ -238,6 +238,36 @@ export const Sales: React.FC = () => {
                        ))}
                     </tbody>
                  </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                 {mockInvoices.map((inv) => (
+                    <div key={inv.id} className="p-4 bg-white space-y-3">
+                       <div className="flex justify-between items-start">
+                          <div>
+                             <span className="text-sm font-bold text-primary-600">{inv.id}</span>
+                             <h4 className="font-semibold text-slate-800 mt-0.5">{inv.customer}</h4>
+                          </div>
+                          <Badge variant={getStatusVariant(inv.status)}>{inv.status}</Badge>
+                       </div>
+                       
+                       <div className="flex justify-between items-center py-2 border-t border-b border-slate-50">
+                          <span className="text-xs text-slate-500">{inv.date}</span>
+                          <span className="text-lg font-bold text-slate-800">₹ {inv.amount.toLocaleString()}</span>
+                       </div>
+
+                       <div className="flex justify-between items-center text-xs text-slate-500">
+                          <div className="flex items-center gap-1">
+                             <Briefcase className="w-3 h-3" />
+                             {inv.salesPerson}
+                          </div>
+                          <button className="p-1">
+                             <MoreVertical className="w-4 h-4" />
+                          </button>
+                       </div>
+                    </div>
+                 ))}
               </div>
            </div>
         </div>
@@ -289,7 +319,9 @@ export const Sales: React.FC = () => {
                      <Award className="w-4 h-4 text-amber-500" /> Sales Leaderboard
                    </h4>
                 </div>
-                <div className="overflow-x-auto">
+                
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
                    <table className="w-full text-sm text-left">
                       <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
                          <tr>
@@ -339,6 +371,49 @@ export const Sales: React.FC = () => {
                       </tbody>
                    </table>
                 </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-slate-100">
+                   {filteredTeamData.length > 0 ? (
+                      filteredTeamData.map((person) => (
+                         <div key={person.id} className="p-4 bg-white space-y-4">
+                            <div className="flex items-start justify-between">
+                               <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                                     {person.name.charAt(0)}
+                                  </div>
+                                  <div>
+                                     <h4 className="font-bold text-slate-800">{person.name}</h4>
+                                     <p className="text-xs text-slate-500">{person.role}</p>
+                                  </div>
+                               </div>
+                               <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
+                                  {person.rate}% Cut
+                               </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                               <Building className="w-3.5 h-3.5" /> {getOrgName(person.orgId)}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
+                               <div>
+                                  <p className="text-xs text-slate-400 mb-0.5">Total Sales</p>
+                                  <p className="font-medium text-slate-700">₹ {person.sales.toLocaleString()}</p>
+                               </div>
+                               <div className="text-right">
+                                  <p className="text-xs text-slate-400 mb-0.5">Commission</p>
+                                  <p className="font-bold text-emerald-600">₹ {person.commission.toLocaleString()}</p>
+                               </div>
+                            </div>
+                         </div>
+                      ))
+                   ) : (
+                      <div className="p-8 text-center text-slate-500 italic">
+                         No sales data found for the selected organization.
+                      </div>
+                   )}
+                </div>
               </div>
             </>
           )}
@@ -346,7 +421,7 @@ export const Sales: React.FC = () => {
           {/* --- PERSONAL VIEW: MY PERFORMANCE --- */}
           {!isAdmin && (
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
                    {/* Background Decorations */}
                    <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl"></div>
@@ -362,20 +437,20 @@ export const Sales: React.FC = () => {
                       <div className="space-y-8">
                          <div>
                             <p className="text-emerald-200 text-sm font-medium mb-1">Total Sales Generated</p>
-                            <h3 className="text-4xl font-bold tracking-tight">₹ {myPerformance.totalSales.toLocaleString()}</h3>
+                            <h3 className="text-3xl sm:text-4xl font-bold tracking-tight">₹ {myPerformance.totalSales.toLocaleString()}</h3>
                          </div>
                          
-                         <div className="grid grid-cols-2 gap-8 pt-6 border-t border-white/10">
+                         <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-6 border-t border-white/10">
                             <div>
                                <p className="text-emerald-200 text-xs uppercase tracking-wider font-medium mb-1">Commission Earned</p>
-                               <p className="text-2xl font-bold text-white">₹ {myPerformance.earned.toLocaleString()}</p>
+                               <p className="text-xl sm:text-2xl font-bold text-white">₹ {myPerformance.earned.toLocaleString()}</p>
                                <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 rounded text-xs text-white font-medium">
                                  {myPerformance.commissionRate}% Cut
                                </span>
                             </div>
                             <div>
                                <p className="text-emerald-200 text-xs uppercase tracking-wider font-medium mb-1">Annual Target</p>
-                               <p className="text-2xl font-semibold text-white/90">₹ {myPerformance.target.toLocaleString()}</p>
+                               <p className="text-xl sm:text-2xl font-semibold text-white/90">₹ {myPerformance.target.toLocaleString()}</p>
                             </div>
                          </div>
                       </div>
