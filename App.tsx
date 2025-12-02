@@ -11,6 +11,7 @@ import { Employees } from './pages/Employees';
 import { Inventory } from './pages/Inventory';
 import { Roles } from './pages/Roles';
 import { Sales } from './pages/Sales';
+import { NotFound } from './pages/NotFound';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserRole } from './types';
@@ -70,7 +71,7 @@ const AppRoutes = () => {
 
       {/* Protected Routes */}
       <Route
-        path="*"
+        path="/*"
         element={
           <ProtectedRoute>
             <Layout user={user} onLogout={logout}>
@@ -120,7 +121,8 @@ const AppRoutes = () => {
                 <Route path="/documents" element={<ProtectedRoute permissionScope="Documents"><PlaceholderModule title="Documents" /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute permissionScope="Settings"><PlaceholderModule title="Settings" /></ProtectedRoute>} />
                 
-                <Route path="*" element={<Navigate to="/" />} />
+                {/* 404 Route inside Layout (for keeping sidebar/header) */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>
           </ProtectedRoute>
