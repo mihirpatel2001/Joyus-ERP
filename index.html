@@ -5,34 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Joyous Industries CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ["Inter", "sans-serif"],
+              sans: ['Inter', 'sans-serif'],
             },
             colors: {
               primary: {
-                50: "#f0fdf4",
-                100: "#dcfce7",
-                200: "#bbf7d0",
-                300: "#86efac",
-                400: "#4ade80",
-                500: "#22c55e", // main green (your central brand color)
-                600: "#16a34a",
-                700: "#15803d",
-                800: "#166534",
-                900: "#14532d",
-              },
-            },
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+              }
+            }
           },
         },
-      };
+      }
     </script>
     <style>
       /* Global Custom Scrollbar */
@@ -40,17 +37,17 @@
         width: 10px;
         height: 10px;
       }
-
+      
       ::-webkit-scrollbar-track {
         background: #f8fafc; /* Matches slate-50 background */
       }
-
+      
       ::-webkit-scrollbar-thumb {
         background-color: #cbd5e1; /* slate-300 */
         border-radius: 20px;
         border: 3px solid #f8fafc; /* Creates padding effect */
       }
-
+      
       ::-webkit-scrollbar-thumb:hover {
         background-color: #0284c7; /* primary-600 */
       }
@@ -63,57 +60,45 @@
 
       /* Custom scrollbar class for hiding scrollbar (used in sidebar) */
       .scrollbar-hide::-webkit-scrollbar {
-        display: none;
+          display: none;
       }
       .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+          -ms-overflow-style: none;
+          scrollbar-width: none;
       }
 
       /* Animation utilities */
       @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
       }
       .animate-fadeIn {
         animation: fadeIn 0.2s ease-out forwards;
       }
       @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
       }
       .animate-slideIn {
         animation: slideIn 0.3s ease-out forwards;
       }
     </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-          "react-dom": "https://esm.sh/react-dom@18.2.0?deps=react@18.2.0",
-          "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
-          "react/": "https://esm.sh/react@18.2.0/",
-          "react": "https://esm.sh/react@18.2.0",
-          "lucide-react": "https://esm.sh/lucide-react@0.363.0?deps=react@18.2.0",
-          "recharts": "https://esm.sh/recharts@2.12.3?deps=react@18.2.0,react-dom@18.2.0",
-          "tslib": "https://esm.sh/tslib@2.6.2",
-          "react-easy-crop": "https://esm.sh/react-easy-crop@5.0.5?deps=react@18.2.0,tslib@2.6.2"
-        }
-      }
-    </script>
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0?deps=react@18.2.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react": "https://esm.sh/react@18.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.363.0?deps=react@18.2.0",
+    "recharts": "https://esm.sh/recharts@2.12.3?deps=react@18.2.0,react-dom@18.2.0",
+    "tslib": "https://esm.sh/tslib@2.6.2",
+    "react-easy-crop": "https://esm.sh/react-easy-crop@5.0.5?deps=react@18.2.0,tslib@2.6.2"
+  }
+}
+</script>
+</head>
   <body class="bg-slate-50 text-slate-900 font-sans antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Plus, Edit2, Shield, Eye, Info } from 'lucide-react';
+import { Save, ArrowLeft, Plus, Edit2, Shield, Eye, Info, Check } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Checkbox } from '../components/ui/Checkbox';
@@ -57,6 +57,7 @@ export const Roles: React.FC = () => {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState<PermissionsState>({});
+  // Filtering for relevant modules could be implemented here if needed
 
   // Determine if the *Target* role being edited is the Root/Super Admin role
   const isTargetRootRole = currentRoleId === 'role_super_admin';
@@ -68,6 +69,9 @@ export const Roles: React.FC = () => {
     setCurrentRoleId(role.id);
     setRoleName(role.name);
     setDescription(role.description);
+    
+    // Only show relevant modules if defined in the role (filtering logic)
+    // For now, we normalize all modules to ensure stability
     setPermissions(normalizePermissions(role.permissions));
     setView('edit');
   };
@@ -205,7 +209,7 @@ export const Roles: React.FC = () => {
   if (view === 'list') {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Roles & Permissions</h1>
             <p className="text-slate-500 text-sm">Manage user roles and access levels</p>
@@ -231,7 +235,7 @@ export const Roles: React.FC = () => {
                 )}
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-1">{role.name}</h3>
-              <p className="text-sm text-slate-500 mb-6 flex-1">{role.description}</p>
+              <p className="text-sm text-slate-500 mb-6 flex-1 line-clamp-2">{role.description}</p>
               
               <div className="border-t border-slate-100 pt-4 mt-auto">
                 <Button variant="outline" className="w-full" onClick={() => handleEditRole(role)}>
@@ -255,9 +259,9 @@ export const Roles: React.FC = () => {
 
   // --- RENDER EDITOR VIEW ---
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setView('list')}
@@ -274,13 +278,13 @@ export const Roles: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setView('list')}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setView('list')} className="flex-1 sm:flex-none">
             {canEdit ? 'Cancel' : 'Back'}
           </Button>
           {canEdit && (
-            <Button onClick={handleSave} isLoading={loading}>
-              <Save className="w-4 h-4 mr-2" /> Save Changes
+            <Button onClick={handleSave} isLoading={loading} className="flex-1 sm:flex-none">
+              <Save className="w-4 h-4 mr-2" /> Save
             </Button>
           )}
         </div>
@@ -356,7 +360,7 @@ export const Roles: React.FC = () => {
         {Object.entries(PERMISSION_MODULES).map(([category, subModules]) => (
           <div key={category} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             {/* Category Header with Toggle */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="px-4 md:px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h3 className="font-bold text-slate-800 text-base">{category}</h3>
               {canEdit && (
                 <div className="flex items-center gap-2">
@@ -370,7 +374,8 @@ export const Roles: React.FC = () => {
               )}
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-slate-500 font-medium border-b border-slate-100 bg-white">
                   <tr>
@@ -391,18 +396,15 @@ export const Roles: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {subModules.map((subModule) => {
-                    // Safe access to permission object
                     const modulePerms = permissions[category]?.[subModule] || { 
                       read: false, write: false, edit: false, delete: false 
                     };
-                    
                     const allChecked = modulePerms.read && modulePerms.write && modulePerms.edit && modulePerms.delete;
                     
                     return (
                       <tr key={subModule} className="hover:bg-slate-50/50 transition-colors">
                         <td className="px-6 py-3 font-medium text-slate-700 uppercase text-xs tracking-wide">
                           <div className="flex items-center gap-3">
-                             {/* Row Master Toggle */}
                              <Checkbox 
                                checked={allChecked}
                                onChange={(val) => toggleAllInRow(category, subModule, val)}
@@ -428,15 +430,65 @@ export const Roles: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {subModules.map((subModule) => {
+                 const modulePerms = permissions[category]?.[subModule] || { 
+                      read: false, write: false, edit: false, delete: false 
+                 };
+                 const allChecked = modulePerms.read && modulePerms.write && modulePerms.edit && modulePerms.delete;
+                 
+                 return (
+                   <div key={subModule} className="p-4">
+                     <div className="flex items-center justify-between mb-3">
+                       <span className="font-semibold text-slate-700">{subModule}</span>
+                       <label className="flex items-center gap-2 text-xs text-slate-500">
+                          Select Row
+                          <Checkbox 
+                             checked={allChecked}
+                             onChange={(val) => toggleAllInRow(category, subModule, val)}
+                             disabled={!canEdit}
+                          />
+                       </label>
+                     </div>
+                     <div className="grid grid-cols-2 gap-3">
+                       {(['read', 'write', 'edit', 'delete'] as const).map((type) => (
+                         <label 
+                           key={type} 
+                           className={`
+                             flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer
+                             ${modulePerms[type] 
+                               ? 'bg-primary-50 border-primary-200' 
+                               : 'bg-white border-slate-200'}
+                             ${!canEdit ? 'opacity-75 cursor-not-allowed' : 'active:scale-95'}
+                           `}
+                         >
+                            <span className={`text-xs font-medium uppercase ${modulePerms[type] ? 'text-primary-700' : 'text-slate-500'}`}>
+                              {type}
+                            </span>
+                            <Checkbox 
+                               checked={modulePerms[type]}
+                               onChange={() => togglePermission(category, subModule, type)}
+                               disabled={!canEdit}
+                            />
+                         </label>
+                       ))}
+                     </div>
+                   </div>
+                 );
+              })}
+            </div>
+
           </div>
         ))}
       </div>
 
       {/* Sticky Footer for Actions - Only show if editable */}
       {canEdit && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 lg:pl-64 flex justify-end gap-3 z-10 shadow-lg">
-           <Button variant="outline" onClick={() => setView('list')}>Cancel</Button>
-           <Button onClick={handleSave} isLoading={loading}>Save Changes</Button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 lg:pl-64 flex flex-col sm:flex-row justify-end gap-3 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+           <Button variant="outline" onClick={() => setView('list')} className="w-full sm:w-auto">Cancel</Button>
+           <Button onClick={handleSave} isLoading={loading} className="w-full sm:w-auto">Save Changes</Button>
         </div>
       )}
     </div>
