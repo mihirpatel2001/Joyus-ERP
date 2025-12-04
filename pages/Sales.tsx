@@ -1,25 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  TrendingUp, 
-  Percent, 
-  Award, 
-  Plus, 
-  FileText, 
-  Search, 
-  Filter, 
-  Download, 
-  MoreVertical,
-  CheckCircle,
-  Clock,
-  ArrowUpRight,
-  Building,
-  DollarSign,
-  Briefcase
+  TrendingUp, Percent, Award, Plus, FileText, Search, Filter, Download, MoreVertical,
+  CheckCircle, Clock, Building, DollarSign
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { Select } from '../components/ui/Select';
+import { Pagination } from '../components/ui/Pagination';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { MOCK_ORGANIZATIONS } from '../constants';
@@ -39,19 +27,46 @@ const mockInvoices = [
   { id: 'INV-002', customer: 'Global Supplies', date: '2023-10-03', amount: 12500, status: 'Pending', salesPerson: 'Sarah Connor' },
   { id: 'INV-003', customer: 'Tech Solutions', date: '2023-10-05', amount: 89000, status: 'Overdue', salesPerson: 'Michael Ross' },
   { id: 'INV-004', customer: 'Stark Ind', date: '2023-10-06', amount: 240000, status: 'Paid', salesPerson: 'Jessica Pearson' },
+  { id: 'INV-005', customer: 'Wayne Enterprises', date: '2023-10-07', amount: 550000, status: 'Paid', salesPerson: 'Harvey Specter' },
+  { id: 'INV-006', customer: 'Cyberdyne', date: '2023-10-08', amount: 150000, status: 'Pending', salesPerson: 'Sarah Connor' },
+  { id: 'INV-007', customer: 'Massive Dynamic', date: '2023-10-09', amount: 67000, status: 'Paid', salesPerson: 'Michael Ross' },
+  { id: 'INV-008', customer: 'Hooli', date: '2023-10-10', amount: 320000, status: 'Pending', salesPerson: 'Jessica Pearson' },
+  { id: 'INV-009', customer: 'Initech', date: '2023-10-11', amount: 12000, status: 'Overdue', salesPerson: 'Michael Ross' },
+  { id: 'INV-010', customer: 'Umbrella Corp', date: '2023-10-12', amount: 850000, status: 'Paid', salesPerson: 'Harvey Specter' },
+  { id: 'INV-011', customer: 'Aperture Science', date: '2023-10-13', amount: 42000, status: 'Pending', salesPerson: 'Sarah Connor' },
 ];
 
 export const Sales: React.FC = () => {
-  const { user, hasRole, organizations } = useAuth();
+  const { hasRole, organizations } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'commissions'>('overview');
-  const [invoiceFilter, setInvoiceFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Pagination State for Invoices
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
   // Admin Filter State
   const [selectedOrgFilter, setSelectedOrgFilter] = useState<string>('All');
 
   const isAdmin = hasRole([UserRole.ADMIN, UserRole.SUPER_ADMIN]);
   
+  // Reset pagination on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Filter Invoices
+  const filteredInvoices = mockInvoices.filter(inv => 
+    inv.customer.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    inv.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination Slices
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentInvoices = filteredInvoices.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+
   // --- Computed Data for Admin View ---
   const filteredTeamData = useMemo(() => {
     if (selectedOrgFilter === 'All') return salesTeamData;
@@ -88,417 +103,327 @@ export const Sales: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Sales</h1>
-          <p className="text-slate-500 text-sm">Manage sales operations and track performance.</p>
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-4">
+      {/* Header & Fixed Top Section */}
+      <div className="flex-shrink-0 space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-content-strong">Sales</h1>
+            <p className="text-content-sub text-sm">Track invoices, estimates, and performance</p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+             <Button variant="outline" className="flex-1 sm:flex-none">
+                <FileText className="w-4 h-4 mr-2" /> Estimates
+             </Button>
+             <Button className="flex-1 sm:flex-none">
+                <Plus className="w-4 h-4 mr-2" /> New Invoice
+             </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {activeTab === 'overview' && (
-            <Button>
-              <Plus className="w-4 h-4 mr-2" /> Create Invoice
-            </Button>
-          )}
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="border-b border-slate-200 overflow-x-auto">
-        <div className="flex space-x-8 whitespace-nowrap">
-           <button
-             onClick={() => setActiveTab('overview')}
-             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-               activeTab === 'overview' 
-                 ? 'border-primary-600 text-primary-600' 
-                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-             }`}
-           >
-             Overview & Invoices
-           </button>
-           <button
-             onClick={() => setActiveTab('commissions')}
-             className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-               activeTab === 'commissions' 
-                 ? 'border-emerald-600 text-emerald-600' 
-                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-             }`}
-           >
-             {isAdmin ? 'Team Commissions' : 'My Commission'}
-           </button>
+        {/* Tabs */}
+        <div className="flex border-b border-divider overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'overview' 
+                ? 'border-primary-600 text-primary-700' 
+                : 'border-transparent text-content-sub hover:text-content-strong'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('commissions')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'commissions' 
+                ? 'border-primary-600 text-primary-700' 
+                : 'border-transparent text-content-sub hover:text-content-strong'
+            }`}
+          >
+            Commissions
+          </button>
         </div>
       </div>
 
       {/* ======================= OVERVIEW TAB ======================= */}
       {activeTab === 'overview' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Quick Stats Row */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
-                       <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Total Revenue</p>
-                       <p className="text-2xl font-bold text-slate-800 mt-1">₹ 4.5 Cr</p>
-                    </div>
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                       <DollarSign className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center text-xs text-green-600 font-medium">
-                     <TrendingUp className="w-3 h-3 mr-1" /> +12% vs last month
-                  </div>
+        <div className="bg-surface rounded-xl shadow-sm border border-divider flex flex-col flex-1 min-h-0 overflow-hidden animate-fadeIn">
+            {/* Toolbar */}
+            <div className="p-4 border-b border-divider flex flex-col sm:flex-row gap-4 justify-between items-center flex-shrink-0">
+               <div className="relative flex-1 max-w-md w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-sub" />
+                  <input 
+                    type="text" 
+                    placeholder="Search invoices..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg text-sm bg-surface text-content-strong placeholder-content-sub focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
+                  />
                </div>
-               
-               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
-                       <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Pending Invoices</p>
-                       <p className="text-2xl font-bold text-slate-800 mt-1">12</p>
-                    </div>
-                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                       <Clock className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="mt-4 text-xs text-slate-500">
-                     Total value: ₹ 8.2 Lakhs
-                  </div>
+               <div className="flex gap-2">
+                 <Button variant="outline" size="sm" className="hidden sm:flex">
+                   <Filter className="w-4 h-4 mr-2" /> Filter
+                 </Button>
+                 <Button variant="outline" size="sm">
+                   <Download className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Export</span>
+                 </Button>
                </div>
+            </div>
 
-               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
-                       <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Invoices Paid</p>
-                       <p className="text-2xl font-bold text-slate-800 mt-1">145</p>
-                    </div>
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                       <CheckCircle className="w-6 h-6" />
-                    </div>
-                  </div>
-                  <div className="mt-4 text-xs text-slate-500">
-                     This fiscal year
-                  </div>
-               </div>
-           </div>
-
-           {/* Invoices Table */}
-           <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between gap-4">
-                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search invoices..." 
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                 </div>
-                 <div className="flex gap-2">
-                    <Button variant="outline" className="text-slate-600">
-                       <Filter className="w-4 h-4 mr-2" /> Filter
-                    </Button>
-                    <Button variant="outline" className="text-slate-600">
-                       <Download className="w-4 h-4 mr-2" /> Export
-                    </Button>
-                 </div>
-              </div>
-
-              {/* Desktop View */}
-              <div className="hidden md:block overflow-x-auto">
-                 <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                       <tr>
-                          <th className="px-6 py-4">Invoice ID</th>
-                          <th className="px-6 py-4">Customer</th>
-                          <th className="px-6 py-4">Date</th>
-                          <th className="px-6 py-4 text-right">Amount</th>
-                          <th className="px-6 py-4">Sales Person</th>
-                          <th className="px-6 py-4 text-center">Status</th>
-                          <th className="px-6 py-4"></th>
-                       </tr>
+            {/* Scrollable List Area */}
+            <div className="flex-1 overflow-auto">
+                {/* Desktop Table */}
+                <div className="hidden md:block">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-canvas text-content-sub font-medium border-b border-divider sticky top-0 z-10">
+                      <tr>
+                        <th className="px-6 py-4 bg-canvas">Invoice #</th>
+                        <th className="px-6 py-4 bg-canvas">Customer</th>
+                        <th className="px-6 py-4 bg-canvas">Date</th>
+                        <th className="px-6 py-4 bg-canvas text-right">Amount</th>
+                        <th className="px-6 py-4 bg-canvas text-center">Status</th>
+                        <th className="px-6 py-4 bg-canvas text-right">Action</th>
+                      </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                       {mockInvoices.map((inv) => (
-                          <tr key={inv.id} className="hover:bg-slate-50/50">
-                             <td className="px-6 py-4 font-medium text-primary-600">{inv.id}</td>
-                             <td className="px-6 py-4 text-slate-800">{inv.customer}</td>
-                             <td className="px-6 py-4 text-slate-500">{inv.date}</td>
-                             <td className="px-6 py-4 text-right font-medium text-slate-700">₹ {inv.amount.toLocaleString()}</td>
-                             <td className="px-6 py-4 text-slate-600">{inv.salesPerson}</td>
-                             <td className="px-6 py-4 text-center">
-                                <Badge variant={getStatusVariant(inv.status)}>{inv.status}</Badge>
-                             </td>
-                             <td className="px-6 py-4 text-right">
-                                <button className="text-slate-400 hover:text-slate-600">
-                                   <MoreVertical className="w-4 h-4" />
-                                </button>
-                             </td>
+                    <tbody className="divide-y divide-divider">
+                      {currentInvoices.length > 0 ? (
+                        currentInvoices.map(inv => (
+                          <tr key={inv.id} className="hover:bg-surface-highlight transition-colors">
+                            <td className="px-6 py-4 font-medium text-primary-600">{inv.id}</td>
+                            <td className="px-6 py-4 font-medium text-content-strong">{inv.customer}</td>
+                            <td className="px-6 py-4 text-content-normal">{new Date(inv.date).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 text-right font-medium text-content-strong">₹ {inv.amount.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-center">
+                              <Badge variant={getStatusVariant(inv.status) as any}>{inv.status}</Badge>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button className="text-content-sub hover:text-content-strong p-1">
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
-                       ))}
+                        ))
+                      ) : (
+                        <tr>
+                           <td colSpan={6}>
+                              <EmptyState 
+                                title="No Invoices Found"
+                                description="Try adjusting your search or create a new invoice."
+                                actionLabel="Create Invoice"
+                                icon={FileText}
+                              />
+                           </td>
+                        </tr>
+                      )}
                     </tbody>
-                 </table>
-              </div>
+                  </table>
+                </div>
 
-              {/* Mobile Card View */}
-              <div className="md:hidden divide-y divide-slate-100">
-                 {mockInvoices.map((inv) => (
-                    <div key={inv.id} className="p-4 bg-white space-y-3">
-                       <div className="flex justify-between items-start">
-                          <div>
-                             <span className="text-sm font-bold text-primary-600">{inv.id}</span>
-                             <h4 className="font-semibold text-slate-800 mt-0.5">{inv.customer}</h4>
-                          </div>
-                          <Badge variant={getStatusVariant(inv.status)}>{inv.status}</Badge>
-                       </div>
-                       
-                       <div className="flex justify-between items-center py-2 border-t border-b border-slate-50">
-                          <span className="text-xs text-slate-500">{inv.date}</span>
-                          <span className="text-lg font-bold text-slate-800">₹ {inv.amount.toLocaleString()}</span>
-                       </div>
+                {/* Mobile Card View - Ensure this is visible and structured correctly */}
+                <div className="md:hidden p-4 space-y-4">
+                  {currentInvoices.length > 0 ? (
+                    currentInvoices.map(inv => (
+                      <div key={inv.id} className="bg-surface border border-divider rounded-xl p-4 shadow-sm space-y-3">
+                         <div className="flex justify-between items-start">
+                            <div>
+                               <p className="font-bold text-primary-600 text-sm">{inv.id}</p>
+                               <h3 className="font-semibold text-content-strong">{inv.customer}</h3>
+                            </div>
+                            <Badge variant={getStatusVariant(inv.status) as any}>{inv.status}</Badge>
+                         </div>
+                         <div className="flex justify-between items-center text-sm pt-2 border-t border-divider">
+                            <div className="flex items-center gap-1.5 text-content-sub">
+                               <Clock className="w-3.5 h-3.5" />
+                               {new Date(inv.date).toLocaleDateString()}
+                            </div>
+                            <p className="font-bold text-content-strong text-base">₹ {inv.amount.toLocaleString()}</p>
+                         </div>
+                      </div>
+                    ))
+                  ) : (
+                    <EmptyState 
+                      title="No Invoices Found"
+                      description="Try adjusting your search or create a new invoice."
+                      actionLabel="Create Invoice"
+                      icon={FileText}
+                    />
+                  )}
+                </div>
+            </div>
 
-                       <div className="flex justify-between items-center text-xs text-slate-500">
-                          <div className="flex items-center gap-1">
-                             <Briefcase className="w-3 h-3" />
-                             {inv.salesPerson}
-                          </div>
-                          <button className="p-1">
-                             <MoreVertical className="w-4 h-4" />
-                          </button>
-                       </div>
-                    </div>
-                 ))}
-              </div>
-           </div>
+            {/* Pagination */}
+            <div className="flex-shrink-0 mt-auto border-t border-divider">
+               <Pagination 
+                 currentPage={currentPage}
+                 totalPages={totalPages}
+                 onPageChange={setCurrentPage}
+                 totalItems={filteredInvoices.length}
+                 itemsPerPage={itemsPerPage}
+                 onItemsPerPageChange={setItemsPerPage}
+               />
+            </div>
         </div>
       )}
 
       {/* ======================= COMMISSIONS TAB ======================= */}
       {activeTab === 'commissions' && (
-        <div className="space-y-8 animate-fadeIn">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-fadeIn">
           
-          {/* --- ADMIN VIEW: TEAM LEADERBOARD & ORG FILTER --- */}
-          {isAdmin && (
-            <>
-              {/* Org Filter & Aggregates */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-100 pb-6">
-                   <div>
-                      <h3 className="text-lg font-bold text-slate-800">Team Performance</h3>
-                      <p className="text-slate-500 text-sm mt-1">Overview of sales team metrics across organizations.</p>
+          {/* --- ADMIN VIEW --- */}
+          {isAdmin ? (
+             <div className="flex flex-col h-full gap-4">
+                {/* Admin Stats & Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+                   <div className="bg-surface p-4 rounded-xl border border-divider shadow-sm flex items-center justify-between">
+                      <div>
+                         <p className="text-content-sub text-xs font-medium uppercase tracking-wider">Total Sales (YTD)</p>
+                         <p className="text-xl font-bold text-content-strong mt-1">₹ {teamTotals.sales.toLocaleString()}</p>
+                      </div>
+                      <div className="p-2 bg-primary-50 rounded-lg text-primary-600">
+                         <TrendingUp className="w-5 h-5" />
+                      </div>
                    </div>
-                   <div className="w-full md:w-64">
-                      <Select
-                        label="Filter by Organization"
+                   <div className="bg-surface p-4 rounded-xl border border-divider shadow-sm flex items-center justify-between">
+                      <div>
+                         <p className="text-content-sub text-xs font-medium uppercase tracking-wider">Total Payout</p>
+                         <p className="text-xl font-bold text-success mt-1">₹ {teamTotals.commission.toLocaleString()}</p>
+                      </div>
+                      <div className="p-2 bg-success-bg rounded-lg text-success-text">
+                         <DollarSign className="w-5 h-5" />
+                      </div>
+                   </div>
+                   <div className="bg-surface p-4 rounded-xl border border-divider shadow-sm">
+                      <p className="text-content-sub text-xs font-medium uppercase tracking-wider mb-2">Filter by Organization</p>
+                      <Select 
                         value={selectedOrgFilter}
                         onChange={setSelectedOrgFilter}
                         options={[
                           { label: 'All Organizations', value: 'All' },
-                          ...MOCK_ORGANIZATIONS.map(org => ({ label: org.name, value: org.id }))
+                          ...organizations.map(org => ({ label: org.name, value: org.id }))
                         ]}
+                        className="mb-0"
                       />
                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-                      <p className="text-emerald-700 font-medium text-sm uppercase tracking-wide">Total Team Sales</p>
-                      <p className="text-2xl font-bold text-emerald-900 mt-1">₹ {teamTotals.sales.toLocaleString()}</p>
+                {/* Team Leaderboard */}
+                <div className="bg-surface rounded-xl shadow-sm border border-divider flex flex-col flex-1 min-h-0 overflow-hidden">
+                   <div className="p-4 border-b border-divider flex-shrink-0">
+                      <h3 className="font-bold text-content-strong">Sales Team Performance</h3>
                    </div>
-                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                      <p className="text-blue-700 font-medium text-sm uppercase tracking-wide">Total Commission Payout</p>
-                      <p className="text-2xl font-bold text-blue-900 mt-1">₹ {teamTotals.commission.toLocaleString()}</p>
-                   </div>
-                </div>
-              </div>
-
-              {/* Leaderboard Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                   <h4 className="font-semibold text-slate-800 flex items-center gap-2">
-                     <Award className="w-4 h-4 text-amber-500" /> Sales Leaderboard
-                   </h4>
-                </div>
-                
-                {/* Desktop View */}
-                <div className="hidden md:block overflow-x-auto">
-                   <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-                         <tr>
-                            <th className="px-6 py-4">Sales Person</th>
-                            <th className="px-6 py-4">Role</th>
-                            <th className="px-6 py-4">Organization</th>
-                            <th className="px-6 py-4 text-right">Total Sales</th>
-                            <th className="px-6 py-4 text-center">Comm. Rate</th>
-                            <th className="px-6 py-4 text-right">Commission Earned</th>
-                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                         {filteredTeamData.length > 0 ? (
-                           filteredTeamData.map((person) => (
-                            <tr key={person.id} className="hover:bg-slate-50/50">
-                               <td className="px-6 py-4">
-                                  <div className="flex items-center gap-3">
-                                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                                        {person.name.charAt(0)}
-                                     </div>
-                                     <span className="font-medium text-slate-800">{person.name}</span>
-                                  </div>
-                               </td>
-                               <td className="px-6 py-4 text-slate-600">{person.role}</td>
-                               <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2 text-slate-600">
-                                    <Building className="w-3 h-3 text-slate-400" />
-                                    {getOrgName(person.orgId)}
-                                  </div>
-                               </td>
-                               <td className="px-6 py-4 text-right font-medium text-slate-700">₹ {person.sales.toLocaleString()}</td>
-                               <td className="px-6 py-4 text-center">
-                                  <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
-                                     {person.rate}%
-                                  </span>
-                               </td>
-                               <td className="px-6 py-4 text-right font-bold text-emerald-600">₹ {person.commission.toLocaleString()}</td>
+                   <div className="flex-1 overflow-auto">
+                      <table className="w-full text-sm text-left hidden md:table">
+                         <thead className="bg-canvas text-content-sub font-medium border-b border-divider sticky top-0 z-10">
+                            <tr>
+                               <th className="px-6 py-4 bg-canvas">Name</th>
+                               <th className="px-6 py-4 bg-canvas">Role</th>
+                               <th className="px-6 py-4 bg-canvas">Organization</th>
+                               <th className="px-6 py-4 bg-canvas text-right">Commission Rate</th>
+                               <th className="px-6 py-4 bg-canvas text-right">Total Sales</th>
+                               <th className="px-6 py-4 bg-canvas text-right">Commission Earned</th>
                             </tr>
-                           ))
-                         ) : (
-                           <tr>
-                             <td colSpan={6} className="px-6 py-8 text-center text-slate-500 italic">
-                               No sales data found for the selected organization.
-                             </td>
-                           </tr>
-                         )}
-                      </tbody>
-                   </table>
-                </div>
+                         </thead>
+                         <tbody className="divide-y divide-divider">
+                            {filteredTeamData.map((person) => (
+                               <tr key={person.id} className="hover:bg-surface-highlight">
+                                  <td className="px-6 py-4 font-medium text-content-strong">{person.name}</td>
+                                  <td className="px-6 py-4 text-content-normal">{person.role}</td>
+                                  <td className="px-6 py-4 text-content-sub text-xs">
+                                     <div className="flex items-center gap-1">
+                                        <Building className="w-3 h-3" />
+                                        {getOrgName(person.orgId)}
+                                     </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right text-content-normal">{person.rate}%</td>
+                                  <td className="px-6 py-4 text-right font-medium text-content-strong">₹ {person.sales.toLocaleString()}</td>
+                                  <td className="px-6 py-4 text-right font-bold text-success">₹ {person.commission.toLocaleString()}</td>
+                               </tr>
+                            ))}
+                         </tbody>
+                      </table>
 
-                {/* Mobile Card View */}
-                <div className="md:hidden divide-y divide-slate-100">
-                   {filteredTeamData.length > 0 ? (
-                      filteredTeamData.map((person) => (
-                         <div key={person.id} className="p-4 bg-white space-y-4">
-                            <div className="flex items-start justify-between">
-                               <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
-                                     {person.name.charAt(0)}
-                                  </div>
+                      {/* Mobile Card View for Leaderboard */}
+                      <div className="md:hidden p-4 space-y-4">
+                         {filteredTeamData.map(person => (
+                            <div key={person.id} className="bg-surface border border-divider rounded-xl p-4 shadow-sm">
+                               <div className="flex justify-between items-start mb-2">
                                   <div>
-                                     <h4 className="font-bold text-slate-800">{person.name}</h4>
-                                     <p className="text-xs text-slate-500">{person.role}</p>
+                                     <h3 className="font-bold text-content-strong">{person.name}</h3>
+                                     <p className="text-xs text-content-sub">{person.role}</p>
+                                  </div>
+                                  <Badge variant="success">₹ {person.commission.toLocaleString()}</Badge>
+                               </div>
+                               <div className="space-y-2 mt-3 pt-3 border-t border-divider text-sm">
+                                  <div className="flex justify-between">
+                                     <span className="text-content-sub">Organization</span>
+                                     <span className="font-medium text-content-normal">{getOrgName(person.orgId)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                     <span className="text-content-sub">Total Sales</span>
+                                     <span className="font-medium text-content-strong">₹ {person.sales.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                     <span className="text-content-sub">Rate</span>
+                                     <span className="font-medium text-content-normal">{person.rate}%</span>
                                   </div>
                                </div>
-                               <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
-                                  {person.rate}% Cut
-                               </span>
                             </div>
-
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                               <Building className="w-3.5 h-3.5" /> {getOrgName(person.orgId)}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
-                               <div>
-                                  <p className="text-xs text-slate-400 mb-0.5">Total Sales</p>
-                                  <p className="font-medium text-slate-700">₹ {person.sales.toLocaleString()}</p>
-                               </div>
-                               <div className="text-right">
-                                  <p className="text-xs text-slate-400 mb-0.5">Commission</p>
-                                  <p className="font-bold text-emerald-600">₹ {person.commission.toLocaleString()}</p>
-                               </div>
-                            </div>
-                         </div>
-                      ))
-                   ) : (
-                      <div className="p-8 text-center text-slate-500 italic">
-                         No sales data found for the selected organization.
-                      </div>
-                   )}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* --- PERSONAL VIEW: MY PERFORMANCE --- */}
-          {!isAdmin && (
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-                   {/* Background Decorations */}
-                   <div className="absolute top-0 right-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-                   <div className="absolute bottom-0 left-0 -ml-20 -mb-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl"></div>
-                   
-                   <div className="relative z-10">
-                      <div className="flex items-center gap-2 text-emerald-100 mb-6">
-                         <div className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                            <Briefcase className="w-5 h-5" />
-                         </div>
-                         <span className="font-semibold tracking-wide uppercase text-sm">My Performance (YTD)</span>
-                      </div>
-
-                      <div className="space-y-8">
-                         <div>
-                            <p className="text-emerald-200 text-sm font-medium mb-1">Total Sales Generated</p>
-                            <h3 className="text-3xl sm:text-4xl font-bold tracking-tight">₹ {myPerformance.totalSales.toLocaleString()}</h3>
-                         </div>
-                         
-                         <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-6 border-t border-white/10">
-                            <div>
-                               <p className="text-emerald-200 text-xs uppercase tracking-wider font-medium mb-1">Commission Earned</p>
-                               <p className="text-xl sm:text-2xl font-bold text-white">₹ {myPerformance.earned.toLocaleString()}</p>
-                               <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 rounded text-xs text-white font-medium">
-                                 {myPerformance.commissionRate}% Cut
-                               </span>
-                            </div>
-                            <div>
-                               <p className="text-emerald-200 text-xs uppercase tracking-wider font-medium mb-1">Annual Target</p>
-                               <p className="text-xl sm:text-2xl font-semibold text-white/90">₹ {myPerformance.target.toLocaleString()}</p>
-                            </div>
-                         </div>
+                         ))}
                       </div>
                    </div>
                 </div>
+             </div>
+          ) : (
+             // --- PERSONAL VIEW ---
+             <div className="flex-1 overflow-auto p-1">
+                {/* My Performance Card */}
+                <div className="bg-surface rounded-xl shadow-sm border border-divider p-6 max-w-4xl mx-auto mt-4">
+                    <div className="flex items-center gap-3 mb-6">
+                       <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg">
+                          <Award className="w-6 h-6" />
+                       </div>
+                       <div>
+                          <h2 className="text-xl font-bold text-content-strong">My Performance (YTD)</h2>
+                          <p className="text-content-sub text-sm">Track your progress and earnings</p>
+                       </div>
+                    </div>
 
-                <div className="space-y-6">
-                   <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                      <h4 className="font-bold text-slate-800 mb-4">Target Progress</h4>
-                      <div className="relative pt-1">
-                        <div className="flex mb-2 items-center justify-between">
-                          <div>
-                            <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
-                              On Track
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-xs font-semibold inline-block text-emerald-600">
-                              {Math.round((myPerformance.totalSales / myPerformance.target) * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-emerald-100">
-                          <div style={{ width: `${(myPerformance.totalSales / myPerformance.target) * 100}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500"></div>
-                        </div>
-                        <p className="text-xs text-slate-500">
-                           You are <strong>₹ {(myPerformance.target - myPerformance.totalSales).toLocaleString()}</strong> away from hitting your annual target.
-                        </p>
-                      </div>
-                   </div>
-
-                   <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                      <h4 className="font-bold text-slate-800 mb-4">Commission Breakdown</h4>
-                      <div className="space-y-3">
-                         <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-lg">
-                            <span className="text-slate-600">Pending Approval</span>
-                            <span className="font-medium text-slate-800">₹ 12,500</span>
-                         </div>
-                         <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-lg">
-                            <span className="text-slate-600">Ready for Payout</span>
-                            <span className="font-medium text-green-600">₹ 45,000</span>
-                         </div>
-                         <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-lg">
-                            <span className="text-slate-600">Paid Out (YTD)</span>
-                            <span className="font-medium text-slate-800">₹ 67,500</span>
-                         </div>
-                      </div>
-                   </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                       <div className="p-4 bg-canvas rounded-xl border border-divider">
+                          <p className="text-xs font-medium text-content-sub uppercase tracking-wider mb-1">Commission Earned</p>
+                          <p className="text-2xl font-bold text-success">₹ {myPerformance.earned.toLocaleString()}</p>
+                          <p className="text-xs text-success mt-1 flex items-center gap-1">
+                             <CheckCircle className="w-3 h-3" /> Paid out
+                          </p>
+                       </div>
+                       <div className="p-4 bg-canvas rounded-xl border border-divider">
+                          <p className="text-xs font-medium text-content-sub uppercase tracking-wider mb-1">Total Sales</p>
+                          <p className="text-2xl font-bold text-content-strong">₹ {myPerformance.totalSales.toLocaleString()}</p>
+                          <p className="text-xs text-content-sub mt-1">
+                             {((myPerformance.totalSales / myPerformance.target) * 100).toFixed(1)}% of annual target
+                          </p>
+                       </div>
+                       <div className="p-4 bg-canvas rounded-xl border border-divider">
+                          <p className="text-xs font-medium text-content-sub uppercase tracking-wider mb-1">Commission Rate</p>
+                          <p className="text-2xl font-bold text-primary-600">{myPerformance.commissionRate}%</p>
+                          <p className="text-xs text-content-sub mt-1">Fixed percentage</p>
+                       </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div>
+                       <div className="flex justify-between text-sm mb-2">
+                          <span className="font-medium text-content-normal">Annual Sales Target</span>
+                          <span className="text-content-sub">₹ {myPerformance.totalSales.toLocaleString()} / ₹ {myPerformance.target.toLocaleString()}</span>
+                       </div>
+                       <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                             className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-1000"
+                             style={{ width: `${(myPerformance.totalSales / myPerformance.target) * 100}%` }}
+                          ></div>
+                       </div>
+                    </div>
                 </div>
              </div>
           )}

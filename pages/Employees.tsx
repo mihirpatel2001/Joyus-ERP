@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MoreVertical, Mail, Briefcase, Calendar, Banknote, History, User, ArrowRight, Building, CheckCircle2, AlertCircle, TrendingUp, Percent, BarChart3, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -7,6 +6,7 @@ import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { Checkbox } from '../components/ui/Checkbox';
+import { Pagination } from '../components/ui/Pagination';
 import { Employee, SalaryRecord, UserRole } from '../types';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -76,18 +76,30 @@ const mockEmployees: Employee[] = [
     totalSales: 1000000, // 10 Lakhs
     commissionEarned: 85000
   },
+  // Adding more for pagination testing
+  { id: '5', name: 'James Halpert', email: 'jim@joyous.com', role: UserRole.SALES_PERSON, status: 'Active', joinDate: '2023-07-01', organizationIds: ['org_hq'] },
+  { id: '6', name: 'Pam Beesly', email: 'pam@joyous.com', role: 'Employee', status: 'Active', joinDate: '2023-07-05', organizationIds: ['org_hq'] },
 ];
 
 export const Employees: React.FC = () => {
   const { showToast } = useToast();
-  const { organizations, roles } = useAuth(); // Get available organizations and roles
+  const { organizations, roles } = useAuth(); 
   const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Modal States
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Reset page on filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter, statusFilter]);
+  
+  // ... (Keep existing Modal/Form states)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -102,17 +114,14 @@ export const Employees: React.FC = () => {
     organizationIds: [] as string[]
   });
   
-  // Org Search State for Add Employee Modal
   const [orgSearchTerm, setOrgSearchTerm] = useState('');
 
-  // Salary Update Form State
   const [salaryForm, setSalaryForm] = useState({
     amount: '',
     frequency: 'Monthly',
     reason: ''
   });
 
-  // Commission Form State
   const [commissionForm, setCommissionForm] = useState({
     rate: '',
     totalSales: ''
@@ -127,15 +136,18 @@ export const Employees: React.FC = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Filter organizations for the modal based on search
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+
   const filteredOrgs = organizations.filter(org => 
     org.name.toLowerCase().includes(orgSearchTerm.toLowerCase())
   );
 
-  // Generate Role Options dynamically from Roles & Permissions module
   const roleOptions = roles.map(r => ({ label: r.name, value: r.name }));
 
-  // Helper to determine if a role qualifies for Sales Commission
   const isSalesRole = (role: string) => {
     return [
       UserRole.SALES_PERSON, 
@@ -148,8 +160,7 @@ export const Employees: React.FC = () => {
     ].includes(role);
   };
 
-  // --- Handlers ---
-
+  // ... (Keep Handlers handleCreateEmployee, toggleOrgSelection, openEmployeeDetails, handleUpdateSalary, handleUpdateCommission, getOrgName, calculateAnnualCTC)
   const handleCreateEmployee = () => {
     if (!formData.name || !formData.email) {
       showToast('Please fill in required fields', 'error');
@@ -182,7 +193,7 @@ export const Employees: React.FC = () => {
       setIsLoading(false);
       setIsAddModalOpen(false);
       setFormData({ name: '', email: '', role: 'Employee', status: 'Active', organizationIds: [] });
-      setOrgSearchTerm(''); // Reset search
+      setOrgSearchTerm(''); 
       showToast('Employee created successfully', 'success');
     }, 800);
   };
@@ -230,7 +241,7 @@ export const Employees: React.FC = () => {
         amount: Number(salaryForm.amount),
         frequency: salaryForm.frequency as any,
         reason: salaryForm.reason,
-        changedBy: 'Admin' // In real app, get from AuthContext
+        changedBy: 'Admin'
       };
 
       const updatedEmployee = {
@@ -240,12 +251,11 @@ export const Employees: React.FC = () => {
         salaryHistory: [newHistoryItem, ...(selectedEmployee.salaryHistory || [])]
       };
 
-      // Update Local State
       setEmployees(employees.map(e => e.id === selectedEmployee.id ? updatedEmployee : e));
       setSelectedEmployee(updatedEmployee);
       
       setIsLoading(false);
-      setSalaryForm(prev => ({ ...prev, reason: '' })); // Reset reason only
+      setSalaryForm(prev => ({ ...prev, reason: '' }));
       showToast('Salary updated successfully', 'success');
     }, 800);
   };
@@ -263,9 +273,7 @@ export const Employees: React.FC = () => {
 
     setIsLoading(true);
     setTimeout(() => {
-      // Calculate Commission
       const earned = (sales * rate) / 100;
-
       const updatedEmployee: Employee = {
         ...selectedEmployee,
         commissionRate: rate,
@@ -273,7 +281,6 @@ export const Employees: React.FC = () => {
         commissionEarned: earned
       };
 
-      // Update Local State
       setEmployees(employees.map(e => e.id === selectedEmployee.id ? updatedEmployee : e));
       setSelectedEmployee(updatedEmployee);
       
@@ -294,29 +301,34 @@ export const Employees: React.FC = () => {
     return amount;
   };
 
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Employees</h1>
-          <p className="text-slate-500 text-sm">Manage your team members and roles</p>
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-6">
+      {/* Header & Fixed Top Section */}
+      <div className="flex-shrink-0 space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-content-strong">Employees</h1>
+            <p className="text-content-sub text-sm">Manage your team members and roles</p>
+          </div>
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Add Employee
+          </Button>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Add Employee
-        </Button>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row gap-4 justify-between items-center rounded-t-xl">
+      {/* Main Content Card - Flexible Height */}
+      <div className="bg-surface rounded-xl shadow-sm border border-divider flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Filters & Search - Fixed */}
+        <div className="p-4 border-b border-divider flex flex-col lg:flex-row gap-4 justify-between items-center rounded-t-xl flex-shrink-0">
           <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-sub" />
             <input 
               type="text" 
               placeholder="Search employees..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg text-sm bg-surface text-content-strong placeholder-content-sub focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
             />
           </div>
           
@@ -327,7 +339,6 @@ export const Employees: React.FC = () => {
                   onChange={setRoleFilter}
                   options={[
                     { label: 'All Roles', value: 'All' },
-                    // Simplified filter options, could also be dynamic if needed
                     { label: 'Sales Person', value: UserRole.SALES_PERSON },
                     { label: 'Manager', value: 'Manager' },
                     { label: 'Developer', value: 'Developer' },
@@ -352,124 +363,139 @@ export const Employees: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto rounded-b-xl">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 whitespace-nowrap">Name</th>
-                <th className="px-6 py-4 whitespace-nowrap">Role</th>
-                <th className="px-6 py-4 whitespace-nowrap">Status</th>
-                <th className="px-6 py-4 whitespace-nowrap">Join Date</th>
-                <th className="px-6 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredEmployees.map((emp) => (
-                <tr 
-                  key={emp.id} 
-                  className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                  onClick={() => openEmployeeDetails(emp)}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
-                        {emp.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-800 group-hover:text-primary-600 transition-colors">{emp.name}</p>
-                        <div className="flex items-center gap-1 text-slate-500 text-xs">
-                          <Mail className="w-3 h-3" /> {emp.email}
+        {/* Scrollable Table Area */}
+        <div className="flex-1 overflow-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-canvas text-content-sub font-medium border-b border-divider sticky top-0 z-10 shadow-sm">
+                <tr>
+                  <th className="px-6 py-4 whitespace-nowrap bg-canvas">Name</th>
+                  <th className="px-6 py-4 whitespace-nowrap bg-canvas">Role</th>
+                  <th className="px-6 py-4 whitespace-nowrap bg-canvas">Status</th>
+                  <th className="px-6 py-4 whitespace-nowrap bg-canvas">Join Date</th>
+                  <th className="px-6 py-4 text-right bg-canvas">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {currentItems.map((emp) => (
+                  <tr 
+                    key={emp.id} 
+                    className="hover:bg-surface-highlight transition-colors cursor-pointer group"
+                    onClick={() => openEmployeeDetails(emp)}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
+                          {emp.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-content-strong group-hover:text-primary-600 transition-colors">{emp.name}</p>
+                          <div className="flex items-center gap-1 text-content-sub text-xs">
+                            <Mail className="w-3 h-3" /> {emp.email}
+                          </div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-content-normal">
+                        <Briefcase className="w-4 h-4 text-content-sub" />
+                        {emp.role === UserRole.SALES_PERSON ? 'Sales Person' : emp.role}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={emp.status === 'Active' ? 'success' : 'neutral'}>
+                        {emp.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-content-normal">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-content-sub" />
+                        {new Date(emp.joinDate).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-content-sub hover:text-content-strong p-1">
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {currentItems.length === 0 && (
+                   <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-content-sub">
+                      No employees found matching your filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden grid grid-cols-1 gap-4 p-4">
+            {currentItems.map((emp) => (
+              <div 
+                key={emp.id} 
+                className="bg-surface p-4 rounded-xl border border-divider shadow-sm space-y-4 active:bg-surface-highlight"
+                onClick={() => openEmployeeDetails(emp)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-lg">
+                      {emp.name.charAt(0)}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Briefcase className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <h3 className="font-bold text-content-strong">{emp.name}</h3>
+                      <div className="flex items-center gap-1 text-content-sub text-xs mt-0.5">
+                        <Mail className="w-3 h-3" /> {emp.email}
+                      </div>
+                    </div>
+                  </div>
+                  <button className="text-content-sub p-1">
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-divider">
+                  <div>
+                    <p className="text-xs text-content-sub mb-1">Role</p>
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-content-normal">
+                      <Briefcase className="w-3.5 h-3.5 text-content-sub" />
                       {emp.role === UserRole.SALES_PERSON ? 'Sales Person' : emp.role}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
+                  </div>
+                  <div>
+                    <p className="text-xs text-content-sub mb-1">Status</p>
                     <Badge variant={emp.status === 'Active' ? 'success' : 'neutral'}>
                       {emp.status}
                     </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      {new Date(emp.joinDate).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-slate-400 hover:text-slate-600 p-1">
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredEmployees.length === 0 && (
-                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                    No employees found matching your filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="md:hidden grid grid-cols-1 gap-4">
-        {filteredEmployees.map((emp) => (
-          <div 
-            key={emp.id} 
-            className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4 active:bg-slate-50"
-            onClick={() => openEmployeeDetails(emp)}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-lg">
-                  {emp.name.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">{emp.name}</h3>
-                  <div className="flex items-center gap-1 text-slate-500 text-xs mt-0.5">
-                    <Mail className="w-3 h-3" /> {emp.email}
                   </div>
                 </div>
               </div>
-              <button className="text-slate-400 p-1">
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Role</p>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                  {emp.role === UserRole.SALES_PERSON ? 'Sales Person' : emp.role}
-                </div>
+            ))}
+            {currentItems.length === 0 && (
+              <div className="text-center py-10 bg-surface rounded-xl border border-divider border-dashed">
+                <p className="text-content-sub">No employees found.</p>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Status</p>
-                <Badge variant={emp.status === 'Active' ? 'success' : 'neutral'}>
-                  {emp.status}
-                </Badge>
-              </div>
-            </div>
+            )}
           </div>
-        ))}
-        {filteredEmployees.length === 0 && (
-          <div className="text-center py-10 bg-white rounded-xl border border-slate-200 border-dashed">
-            <p className="text-slate-500">No employees found.</p>
-          </div>
-        )}
-      </div>
+        </div>
 
-      {/* Add Employee Modal */}
+        {/* Pagination Footer - Fixed Bottom */}
+        <div className="flex-shrink-0 mt-auto border-t border-divider">
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredEmployees.length}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
+      </div>
+      
+      {/* ... (Keep existing Modals unchanged) ... */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -512,23 +538,23 @@ export const Employees: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-content-normal mb-2">
               Assign Organizations
             </label>
             
             {/* Org Search Input */}
             <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-content-sub" />
               <input
                 type="text"
                 placeholder="Search organizations..."
                 value={orgSearchTerm}
                 onChange={(e) => setOrgSearchTerm(e.target.value)}
-                className="bg-white text-slate-900 w-full pl-9 pr-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/10"
+                className="bg-surface text-content-strong w-full pl-9 pr-3 py-1.5 text-sm border border-input rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/10"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-3 border border-slate-200 rounded-lg bg-slate-50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-3 border border-divider rounded-lg bg-canvas">
               {filteredOrgs.length > 0 ? (
                 filteredOrgs.map(org => (
                   <label 
@@ -537,7 +563,7 @@ export const Employees: React.FC = () => {
                       flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
                       ${formData.organizationIds.includes(org.id) 
                         ? 'bg-primary-50 border-primary-200 shadow-sm' 
-                        : 'bg-white border-slate-200 hover:border-slate-300'}
+                        : 'bg-surface border-divider hover:border-input'}
                     `}
                   >
                     <Checkbox 
@@ -545,24 +571,24 @@ export const Employees: React.FC = () => {
                       onChange={(checked) => toggleOrgSelection(org.id, checked)}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${formData.organizationIds.includes(org.id) ? 'text-primary-800' : 'text-slate-700'}`}>
+                      <p className={`text-sm font-medium truncate ${formData.organizationIds.includes(org.id) ? 'text-primary-800' : 'text-content-normal'}`}>
                         {org.name}
                       </p>
                     </div>
                   </label>
                 ))
               ) : (
-                <div className="col-span-full py-4 text-center text-xs text-slate-400 italic">
+                <div className="col-span-full py-4 text-center text-xs text-content-sub italic">
                   No organizations found
                 </div>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-content-sub mt-2">
               Selected: {formData.organizationIds.length} organizations
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-divider">
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateEmployee} isLoading={isLoading}>Create Employee</Button>
           </div>
@@ -580,13 +606,13 @@ export const Employees: React.FC = () => {
         >
           <div className="flex flex-col h-[600px]">
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">
+            <div className="flex border-b border-divider mb-6 overflow-x-auto flex-shrink-0">
                <button
                  onClick={() => setActiveTab('profile')}
                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === 'profile' 
                       ? 'border-primary-600 text-primary-700' 
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                      : 'border-transparent text-content-sub hover:text-content-strong'
                  }`}
                >
                  Profile & Access
@@ -596,7 +622,7 @@ export const Employees: React.FC = () => {
                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === 'salary' 
                       ? 'border-primary-600 text-primary-700' 
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
+                      : 'border-transparent text-content-sub hover:text-content-strong'
                  }`}
                >
                  Salary & Payroll
@@ -608,7 +634,7 @@ export const Employees: React.FC = () => {
                    className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                       activeTab === 'commission' 
                         ? 'border-emerald-600 text-emerald-700' 
-                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                        : 'border-transparent text-content-sub hover:text-content-strong'
                    }`}
                  >
                    Commission & Sales
@@ -622,19 +648,19 @@ export const Employees: React.FC = () => {
                  <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-6">
                        <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Email Address</p>
-                          <p className="text-slate-800 font-medium flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-slate-400" /> {selectedEmployee.email}
+                          <p className="text-xs text-content-sub uppercase tracking-wide font-medium mb-1">Email Address</p>
+                          <p className="text-content-strong font-medium flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-content-sub" /> {selectedEmployee.email}
                           </p>
                        </div>
                        <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Join Date</p>
-                          <p className="text-slate-800 font-medium flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-slate-400" /> {selectedEmployee.joinDate}
+                          <p className="text-xs text-content-sub uppercase tracking-wide font-medium mb-1">Join Date</p>
+                          <p className="text-content-strong font-medium flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-content-sub" /> {selectedEmployee.joinDate}
                           </p>
                        </div>
                        <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Status</p>
+                          <p className="text-xs text-content-sub uppercase tracking-wide font-medium mb-1">Status</p>
                           <Badge variant={selectedEmployee.status === 'Active' ? 'success' : 'neutral'}>
                             {selectedEmployee.status}
                           </Badge>
@@ -642,19 +668,19 @@ export const Employees: React.FC = () => {
                     </div>
 
                     <div>
-                       <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">Assigned Organizations</p>
-                       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                       <p className="text-xs text-content-sub uppercase tracking-wide font-medium mb-3">Assigned Organizations</p>
+                       <div className="bg-canvas p-4 rounded-xl border border-divider">
                          {selectedEmployee.organizationIds && selectedEmployee.organizationIds.length > 0 ? (
                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto custom-scrollbar">
                              {selectedEmployee.organizationIds.map(orgId => (
-                               <div key={orgId} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                               <div key={orgId} className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-divider rounded-full shadow-sm">
                                   <Building className="w-3.5 h-3.5 text-primary-500" />
-                                  <span className="text-sm text-slate-700">{getOrgName(orgId)}</span>
+                                  <span className="text-sm text-content-normal">{getOrgName(orgId)}</span>
                                </div>
                              ))}
                            </div>
                          ) : (
-                           <div className="text-slate-400 italic text-sm flex items-center gap-2">
+                           <div className="text-content-sub italic text-sm flex items-center gap-2">
                              <AlertCircle className="w-4 h-4" /> No organizations assigned
                            </div>
                          )}
@@ -711,8 +737,8 @@ export const Employees: React.FC = () => {
                     </div>
 
                     {/* Update Form */}
-                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="bg-surface p-5 rounded-xl border border-divider shadow-sm">
+                       <h4 className="font-bold text-content-strong mb-4 flex items-center gap-2">
                          <Plus className="w-4 h-4 text-primary-600" /> Update Salary
                        </h4>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -748,29 +774,29 @@ export const Employees: React.FC = () => {
 
                     {/* History Table */}
                     <div>
-                       <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                         <History className="w-4 h-4 text-slate-500" /> Salary History
+                       <h4 className="font-bold text-content-strong mb-3 flex items-center gap-2">
+                         <History className="w-4 h-4 text-content-sub" /> Salary History
                        </h4>
-                       <div className="border border-slate-200 rounded-lg overflow-hidden">
+                       <div className="border border-divider rounded-lg overflow-hidden">
                           <table className="w-full text-sm">
-                             <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                             <thead className="bg-canvas text-content-normal border-b border-divider">
                                 <tr>
                                    <th className="px-4 py-3 text-left font-medium">Date</th>
                                    <th className="px-4 py-3 text-left font-medium">Reason</th>
                                    <th className="px-4 py-3 text-right font-medium">Amount</th>
                                 </tr>
                              </thead>
-                             <tbody className="divide-y divide-slate-100">
+                             <tbody className="divide-y divide-divider">
                                 {(selectedEmployee.salaryHistory || []).map(record => (
-                                  <tr key={record.id} className="hover:bg-slate-50/50">
-                                     <td className="px-4 py-3 text-slate-600">{record.date}</td>
-                                     <td className="px-4 py-3 text-slate-800 font-medium">{record.reason}</td>
-                                     <td className="px-4 py-3 text-right font-bold text-slate-700">₹ {record.amount.toLocaleString()}</td>
+                                  <tr key={record.id} className="hover:bg-surface-highlight">
+                                     <td className="px-4 py-3 text-content-normal">{record.date}</td>
+                                     <td className="px-4 py-3 text-content-strong font-medium">{record.reason}</td>
+                                     <td className="px-4 py-3 text-right font-bold text-content-normal">₹ {record.amount.toLocaleString()}</td>
                                   </tr>
                                 ))}
                                 {(!selectedEmployee.salaryHistory || selectedEmployee.salaryHistory.length === 0) && (
                                    <tr>
-                                      <td colSpan={3} className="px-4 py-6 text-center text-slate-400 italic">
+                                      <td colSpan={3} className="px-4 py-6 text-center text-content-sub italic">
                                          No salary history available.
                                       </td>
                                    </tr>
@@ -822,8 +848,8 @@ export const Employees: React.FC = () => {
                     </div>
 
                     {/* Update Commission Form */}
-                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <div className="bg-surface p-5 rounded-xl border border-divider shadow-sm">
+                       <h4 className="font-bold text-content-strong mb-4 flex items-center gap-2">
                          <Percent className="w-4 h-4 text-emerald-600" /> Commission Configuration
                        </h4>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
@@ -840,7 +866,6 @@ export const Employees: React.FC = () => {
                              placeholder="0.00"
                              value={commissionForm.totalSales}
                              onChange={(e) => setCommissionForm({...commissionForm, totalSales: e.target.value})}
-                             // In a real app, this might be read-only as it comes from Invoices
                           />
                        </div>
                        <div className="flex justify-end mt-4">
@@ -854,8 +879,8 @@ export const Employees: React.FC = () => {
                        </div>
                     </div>
                     
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500 flex items-start gap-3">
-                       <AlertCircle className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div className="p-4 bg-canvas border border-divider rounded-lg text-sm text-content-sub flex items-start gap-3">
+                       <AlertCircle className="w-5 h-5 text-content-sub mt-0.5 flex-shrink-0" />
                        <p>
                          Commission is calculated automatically based on total sales. 
                          In the future, Total Sales will be linked directly to paid Invoices where this employee is assigned as the salesperson.
@@ -865,7 +890,7 @@ export const Employees: React.FC = () => {
                )}
             </div>
             
-            <div className="pt-6 mt-2 border-t border-slate-100 flex justify-end">
+            <div className="pt-6 mt-2 border-t border-divider flex justify-end flex-shrink-0">
                <Button variant="outline" onClick={() => setIsDetailModalOpen(false)}>Close</Button>
             </div>
           </div>

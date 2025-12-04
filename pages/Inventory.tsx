@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Filter, MoreVertical, SlidersHorizontal, Package, ArrowUpRight, ArrowDownRight, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -7,6 +7,7 @@ import { Modal } from '../components/ui/Modal';
 import { Checkbox } from '../components/ui/Checkbox';
 import { Switch } from '../components/ui/Switch';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../context/ToastContext';
 import { InventoryItem } from '../types';
 
@@ -15,6 +16,9 @@ const mockItems: InventoryItem[] = [
   { id: '1', name: 'MacBook Pro 16"', description: 'M3 Max, 32GB RAM', unit: 'pcs', type: 'Goods', salesRate: 249000, purchaseRate: 210000, stockOnHand: 5, sku: 'MBP-16-M3', salesAccount: 'Sales', purchaseAccount: 'Purchase' },
   { id: '2', name: 'Logitech MX Master 3S', description: 'Wireless Mouse', unit: 'pcs', type: 'Goods', salesRate: 9999, purchaseRate: 6500, stockOnHand: 24, sku: 'LOGI-MX3', salesAccount: 'Sales', purchaseAccount: 'COGS' },
   { id: '3', name: 'Software Installation', description: 'On-site setup', unit: 'hr', type: 'Service', salesRate: 1500, purchaseRate: 0, stockOnHand: 0, salesAccount: 'General Income' },
+  { id: '4', name: 'USB-C Cable', description: '2m Braided', unit: 'pcs', type: 'Goods', salesRate: 499, purchaseRate: 200, stockOnHand: 100, sku: 'CAB-USBC' },
+  { id: '5', name: 'Monitor Stand', description: 'Adjustable', unit: 'pcs', type: 'Goods', salesRate: 2500, purchaseRate: 1500, stockOnHand: 15, sku: 'STAND-01' },
+  { id: '6', name: 'Webcam 4K', description: 'Pro Streaming', unit: 'pcs', type: 'Goods', salesRate: 12000, purchaseRate: 9000, stockOnHand: 8, sku: 'WEB-4K' },
 ];
 
 export const Inventory: React.FC = () => {
@@ -22,57 +26,38 @@ export const Inventory: React.FC = () => {
   const [items, setItems] = useState<InventoryItem[]>(mockItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
-
-  // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState<Partial<InventoryItem>>({
-    name: '',
-    unit: 'pcs',
-    type: 'Goods',
-    salesRate: 0,
-    purchaseRate: 0,
-    stockOnHand: 0
+    name: '', unit: 'pcs', type: 'Goods', salesRate: 0, purchaseRate: 0, stockOnHand: 0
   });
 
-  // Toggle State for Form Sections
   const [isSalesInfoEnabled, setIsSalesInfoEnabled] = useState(true);
   const [isPurchaseInfoEnabled, setIsPurchaseInfoEnabled] = useState(true);
 
-  // Preferences State
   const [prefs, setPrefs] = useState({
-    trackInventory: true,
-    sku: true,
-    hsn: true,
-    inventoryStartDate: false,
-    group: false,
-    category: false,
-    godown: false,
-    batch: false,
-    priceList: false,
-    barcode: false
+    trackInventory: true, sku: true, hsn: true, inventoryStartDate: false, group: false,
+    category: false, godown: false, batch: false, priceList: false, barcode: false
   });
-
-  // --- Handlers ---
 
   const handleOpenAddModal = () => {
     setEditingId(null);
     setFormData({ 
-      name: '', 
-      unit: 'pcs', 
-      type: 'Goods', 
-      salesRate: 0, 
-      purchaseRate: 0, 
-      stockOnHand: 0,
-      description: '',
-      sku: '',
-      hsn: '',
-      tax: ''
+      name: '', unit: 'pcs', type: 'Goods', salesRate: 0, purchaseRate: 0, 
+      stockOnHand: 0, description: '', sku: '', hsn: '', tax: ''
     });
     setIsSalesInfoEnabled(true);
     setIsPurchaseInfoEnabled(true);
@@ -82,11 +67,8 @@ export const Inventory: React.FC = () => {
   const handleEditItem = (item: InventoryItem) => {
     setEditingId(item.id);
     setFormData({ ...item });
-    
-    // Auto-enable sections if data exists
     setIsSalesInfoEnabled(!!item.salesRate || !!item.salesAccount);
     setIsPurchaseInfoEnabled(!!item.purchaseRate || !!item.purchaseAccount);
-    
     setIsAddModalOpen(true);
   };
 
@@ -105,7 +87,7 @@ export const Inventory: React.FC = () => {
         type: formData.type || 'Goods',
         salesRate: isSalesInfoEnabled ? formData.salesRate : 0,
         purchaseRate: isPurchaseInfoEnabled ? formData.purchaseRate : 0,
-        stockOnHand: editingId ? (formData.stockOnHand || 0) : 0, // Preserve stock if editing, else 0
+        stockOnHand: editingId ? (formData.stockOnHand || 0) : 0, 
         description: formData.description,
         sku: formData.sku,
         hsn: formData.hsn,
@@ -115,11 +97,9 @@ export const Inventory: React.FC = () => {
       };
 
       if (editingId) {
-        // Update existing
         setItems(prev => prev.map(item => item.id === editingId ? itemData : item));
         showToast('Item updated successfully', 'success');
       } else {
-        // Create new
         setItems([...items, itemData]);
         showToast('Item created successfully', 'success');
       }
@@ -134,66 +114,75 @@ export const Inventory: React.FC = () => {
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Inventory</h1>
-          <p className="text-slate-500 text-sm">Manage products and services</p>
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-4 sm:gap-6">
+      {/* Header & Stats - Fixed Top */}
+      <div className="flex-shrink-0 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-content-strong">Inventory</h1>
+            <p className="text-content-sub text-sm">Manage products and services</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsPreferencesOpen(true)}>
+              <SlidersHorizontal className="w-4 h-4 mr-2" /> Preferences
+            </Button>
+            <Button onClick={handleOpenAddModal}>
+              <Plus className="w-4 h-4 mr-2" /> Add Item
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsPreferencesOpen(true)}>
-            <SlidersHorizontal className="w-4 h-4 mr-2" /> Preferences
-          </Button>
-          <Button onClick={handleOpenAddModal}>
-            <Plus className="w-4 h-4 mr-2" /> Add Item
-          </Button>
+
+        {/* Stats Cards - Horizontal Scroll on Mobile */}
+        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-2 md:pb-0 snap-x">
+          <div className="min-w-[85vw] md:min-w-0 bg-surface p-4 rounded-xl border border-divider shadow-sm flex items-center justify-between snap-center">
+             <div>
+                <p className="text-content-sub text-xs font-medium uppercase tracking-wider">Total Items</p>
+                <p className="text-xl font-bold text-content-strong mt-1">{items.length}</p>
+             </div>
+             <div className="p-2 bg-surface-highlight rounded-lg text-content-normal">
+                <Package className="w-5 h-5" />
+             </div>
+          </div>
+          <div className="min-w-[85vw] md:min-w-0 bg-surface p-4 rounded-xl border border-divider shadow-sm flex items-center justify-between snap-center">
+             <div>
+                <p className="text-content-sub text-xs font-medium uppercase tracking-wider">Stock Value</p>
+                <p className="text-xl font-bold text-success mt-1">₹ 12.4L</p>
+             </div>
+             <div className="p-2 bg-success-bg rounded-lg text-success-text">
+                <ArrowUpRight className="w-5 h-5" />
+             </div>
+          </div>
+          <div className="min-w-[85vw] md:min-w-0 bg-surface p-4 rounded-xl border border-divider shadow-sm flex items-center justify-between snap-center">
+             <div>
+                <p className="text-content-sub text-xs font-medium uppercase tracking-wider">Low Stock</p>
+                <p className="text-xl font-bold text-warning mt-1">2</p>
+             </div>
+             <div className="p-2 bg-warning-bg rounded-lg text-warning-text">
+                <ArrowDownRight className="w-5 h-5" />
+             </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-           <div>
-              <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Total Items</p>
-              <p className="text-xl font-bold text-slate-800 mt-1">{items.length}</p>
-           </div>
-           <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-              <Package className="w-5 h-5" />
-           </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-           <div>
-              <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Stock Value</p>
-              <p className="text-xl font-bold text-green-600 mt-1">₹ 12.4L</p>
-           </div>
-           <div className="p-2 bg-green-50 rounded-lg text-green-600">
-              <ArrowUpRight className="w-5 h-5" />
-           </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-           <div>
-              <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Low Stock</p>
-              <p className="text-xl font-bold text-orange-600 mt-1">2</p>
-           </div>
-           <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
-              <ArrowDownRight className="w-5 h-5" />
-           </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+      {/* Main Content - Flexible with Internal Scrolling */}
+      <div className="bg-surface rounded-xl shadow-sm border border-divider flex flex-col flex-1 min-h-0 overflow-hidden">
+        
+        {/* Toolbar - Fixed */}
+        <div className="p-4 border-b border-divider flex flex-col sm:flex-row gap-4 justify-between items-center flex-shrink-0">
           <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-sub" />
             <input 
               type="text" 
               placeholder="Search items by name or SKU..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg text-sm bg-surface text-content-strong placeholder-content-sub focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all shadow-sm"
             />
           </div>
           <div className="flex gap-2">
@@ -206,116 +195,131 @@ export const Inventory: React.FC = () => {
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 w-10"><Checkbox checked={false} onChange={() => {}} /></th>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Description</th>
-                <th className="px-6 py-4">HSN/SAC</th>
-                <th className="px-6 py-4 text-right">Sales Rate</th>
-                <th className="px-6 py-4 text-right">Purchase Rate</th>
-                <th className="px-6 py-4 text-center">Stock In Hand</th>
-                <th className="px-6 py-4 w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <tr 
-                    key={item.id} 
-                    className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                    onClick={() => handleEditItem(item)}
-                  >
-                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={false} onChange={() => {}} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-slate-800 group-hover:text-primary-600 transition-colors">{item.name}</p>
-                        {item.sku && <p className="text-xs text-slate-500">SKU: {item.sku}</p>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 max-w-xs truncate">{item.description || '-'}</td>
-                    <td className="px-6 py-4 text-slate-500">{item.hsn || '-'}</td>
-                    <td className="px-6 py-4 text-right font-medium text-slate-700">₹ {item.salesRate?.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-right text-slate-500">₹ {item.purchaseRate?.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.stockOnHand > 0 ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'
-                      }`}>
-                        {item.stockOnHand} {item.unit}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                       <button className="text-slate-400 hover:text-slate-600 p-1">
-                          <Pencil className="w-4 h-4" />
-                       </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        {/* Scrollable Content Wrapper */}
+        <div className="flex-1 overflow-auto">
+          {/* Table View */}
+          <div className="hidden md:block">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-canvas text-content-normal font-medium border-b border-divider sticky top-0 z-10 shadow-sm">
                 <tr>
-                   <td colSpan={8}>
-                     <EmptyState 
-                       title="No Items Found"
-                       description="Get started by creating a new inventory item."
-                       actionLabel="Add First Item"
-                       onAction={handleOpenAddModal}
-                     />
-                   </td>
+                  <th className="px-6 py-4 w-10 bg-canvas"><Checkbox checked={false} onChange={() => {}} /></th>
+                  <th className="px-6 py-4 bg-canvas">Name</th>
+                  <th className="px-6 py-4 bg-canvas">Description</th>
+                  <th className="px-6 py-4 bg-canvas">HSN/SAC</th>
+                  <th className="px-6 py-4 text-right bg-canvas">Sales Rate</th>
+                  <th className="px-6 py-4 text-right bg-canvas">Purchase Rate</th>
+                  <th className="px-6 py-4 text-center bg-canvas">Stock In Hand</th>
+                  <th className="px-6 py-4 w-10 bg-canvas"></th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-divider">
+                {currentItems.length > 0 ? (
+                  currentItems.map((item) => (
+                    <tr 
+                      key={item.id} 
+                      className="hover:bg-surface-highlight transition-colors cursor-pointer group"
+                      onClick={() => handleEditItem(item)}
+                    >
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={false} onChange={() => {}} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-content-strong group-hover:text-primary-600 transition-colors">{item.name}</p>
+                          {item.sku && <p className="text-xs text-content-sub">SKU: {item.sku}</p>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-content-sub max-w-xs truncate">{item.description || '-'}</td>
+                      <td className="px-6 py-4 text-content-sub">{item.hsn || '-'}</td>
+                      <td className="px-6 py-4 text-right font-medium text-content-normal">₹ {item.salesRate?.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right text-content-sub">₹ {item.purchaseRate?.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          item.stockOnHand > 0 ? 'bg-success-bg text-success-text' : 'bg-canvas text-content-sub'
+                        }`}>
+                          {item.stockOnHand} {item.unit}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <button className="text-content-sub hover:text-content-normal p-1">
+                            <Pencil className="w-4 h-4" />
+                         </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                     <td colSpan={8}>
+                       <EmptyState 
+                         title="No Items Found"
+                         description="Get started by creating a new inventory item."
+                         actionLabel="Add First Item"
+                         onAction={handleOpenAddModal}
+                       />
+                     </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden">
+              {currentItems.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 p-4">
+                      {currentItems.map(item => (
+                          <div 
+                            key={item.id} 
+                            className="bg-surface border border-divider rounded-lg p-4 shadow-sm active:bg-surface-highlight transition-colors"
+                            onClick={() => handleEditItem(item)}
+                          >
+                              <div className="flex justify-between items-start mb-2">
+                                  <div>
+                                      <h3 className="font-bold text-content-strong">{item.name}</h3>
+                                      <p className="text-xs text-content-sub">SKU: {item.sku || '-'}</p>
+                                  </div>
+                                  <span className="px-2 py-0.5 bg-canvas text-content-normal text-xs rounded">
+                                      {item.stockOnHand} {item.unit}
+                                  </span>
+                              </div>
+                              <div className="flex justify-between items-center text-sm mt-3 pt-3 border-t border-divider">
+                                  <div>
+                                      <p className="text-xs text-content-sub">Sales Rate</p>
+                                      <p className="font-medium text-content-normal">₹ {item.salesRate?.toLocaleString()}</p>
+                                  </div>
+                                  <div className="text-right">
+                                      <p className="text-xs text-content-sub">Purchase Rate</p>
+                                      <p className="font-medium text-content-normal">₹ {item.purchaseRate?.toLocaleString()}</p>
+                                  </div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              ) : (
+                  <EmptyState 
+                      title="No Items Found"
+                      description="Get started by creating a new inventory item."
+                      actionLabel="Add First Item"
+                      onAction={handleOpenAddModal}
+                  />
               )}
-            </tbody>
-          </table>
+          </div>
         </div>
 
-        {/* Mobile View */}
-        <div className="md:hidden">
-            {filteredItems.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 p-4">
-                    {filteredItems.map(item => (
-                        <div 
-                          key={item.id} 
-                          className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm active:bg-slate-50 transition-colors"
-                          onClick={() => handleEditItem(item)}
-                        >
-                            <div className="flex justify-between items-start mb-2">
-                                <div>
-                                    <h3 className="font-bold text-slate-800">{item.name}</h3>
-                                    <p className="text-xs text-slate-500">SKU: {item.sku || '-'}</p>
-                                </div>
-                                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded">
-                                    {item.stockOnHand} {item.unit}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm mt-3 pt-3 border-t border-slate-50">
-                                <div>
-                                    <p className="text-xs text-slate-400">Sales Rate</p>
-                                    <p className="font-medium text-slate-700">₹ {item.salesRate?.toLocaleString()}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs text-slate-400">Purchase Rate</p>
-                                    <p className="font-medium text-slate-700">₹ {item.purchaseRate?.toLocaleString()}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <EmptyState 
-                    title="No Items Found"
-                    description="Get started by creating a new inventory item."
-                    actionLabel="Add First Item"
-                    onAction={handleOpenAddModal}
-                />
-            )}
+        {/* Pagination Footer - Fixed Bottom */}
+        <div className="flex-shrink-0 mt-auto border-t border-divider bg-surface">
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredItems.length}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </div>
       </div>
 
-      {/* Add/Edit Item Modal */}
+      {/* ... (Modals remain unchanged) ... */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -323,8 +327,8 @@ export const Inventory: React.FC = () => {
         size="lg"
       >
         <div className="space-y-6 pt-2">
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           {/* Basic Info */}
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input 
               label="Name" 
               placeholder="Item Name" 
@@ -362,13 +366,13 @@ export const Inventory: React.FC = () => {
           </div>
 
           {/* Sales Information */}
-          <div className="border rounded-lg p-4 bg-slate-50/50">
+          <div className="border border-divider rounded-lg p-4 bg-canvas">
              <div className="flex items-center gap-2 mb-4">
                 <Checkbox 
                    checked={isSalesInfoEnabled} 
                    onChange={setIsSalesInfoEnabled}
                 />
-                <span className="font-semibold text-slate-700">Sales Information</span>
+                <span className="font-semibold text-content-normal">Sales Information</span>
              </div>
              
              {isSalesInfoEnabled && (
@@ -404,9 +408,9 @@ export const Inventory: React.FC = () => {
                       />
                    </div>
                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                      <label className="block text-sm font-medium text-content-normal mb-1">Description</label>
                       <textarea 
-                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all h-20 resize-none"
+                        className="w-full px-3 py-2 bg-surface text-content-strong border border-input rounded-lg shadow-sm placeholder-content-sub focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all h-20 resize-none"
                         placeholder="Description for sales invoices..."
                         value={formData.description}
                         onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -417,13 +421,13 @@ export const Inventory: React.FC = () => {
           </div>
 
           {/* Purchase Information */}
-          <div className="border rounded-lg p-4 bg-slate-50/50">
+          <div className="border border-divider rounded-lg p-4 bg-canvas">
              <div className="flex items-center gap-2 mb-4">
                 <Checkbox 
                    checked={isPurchaseInfoEnabled} 
                    onChange={setIsPurchaseInfoEnabled}
                 />
-                <span className="font-semibold text-slate-700">Purchase Information</span>
+                <span className="font-semibold text-content-normal">Purchase Information</span>
              </div>
              
              {isPurchaseInfoEnabled && (
@@ -459,9 +463,9 @@ export const Inventory: React.FC = () => {
                       />
                    </div>
                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                      <label className="block text-sm font-medium text-content-normal mb-1">Description</label>
                       <textarea 
-                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg shadow-sm placeholder-slate-400 focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all h-20 resize-none"
+                        className="w-full px-3 py-2 bg-surface text-content-strong border border-input rounded-lg shadow-sm placeholder-content-sub focus:outline-none focus:border-primary-600 focus:ring-4 focus:ring-primary-500/10 transition-all h-20 resize-none"
                         placeholder="Description for purchase bills..."
                       />
                    </div>
@@ -469,7 +473,7 @@ export const Inventory: React.FC = () => {
              )}
           </div>
           
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-divider">
              <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
              <Button onClick={handleSaveItem} isLoading={loading}>
                 {editingId ? 'Update Item' : 'Save Item'}
@@ -487,17 +491,17 @@ export const Inventory: React.FC = () => {
         confirmText="Save"
         onConfirm={() => setIsPreferencesOpen(false)}
       >
-        <div className="space-y-0 divide-y divide-slate-100">
+        <div className="space-y-0 divide-y divide-divider">
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 py-2">
             <Switch label="Track Inventory" checked={prefs.trackInventory} onChange={(v) => setPrefs({...prefs, trackInventory: v})} />
             <Switch label="SKU" checked={prefs.sku} onChange={(v) => setPrefs({...prefs, sku: v})} />
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 py-2">
+           <div className="grid grid-cols-2 gap-x-8 gap-y-1 py-2">
             <div className="py-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Inventory Start Date</label>
+                <label className="block text-sm font-medium text-content-normal mb-1">Inventory Start Date</label>
                 <input 
                   type="date" 
-                  className="w-full px-3 py-1.5 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
+                  className="w-full px-3 py-1.5 bg-surface text-content-strong border border-input rounded-lg text-sm focus:outline-none focus:border-primary-500 disabled:bg-canvas disabled:text-content-sub transition-colors"
                   disabled={!prefs.trackInventory} 
                 />
             </div>
