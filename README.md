@@ -5,26 +5,31 @@ A comprehensive, modern Business Management solution designed to streamline Cust
 ## 🚀 Key Features
 
 ### 📊 Dashboard & Analytics
+
 - **Financial Overview**: Real-time tracking of Receivables, Payables, Net Profit, and Cash Flow.
 - **Interactive Charts**: Visual data representation using Recharts for income/expense analysis.
 - **Task Management**: Quick view of pending tasks and approvals.
 
 ### 👥 Human Resource Management (HRM)
+
 - **Employee Directory**: Manage employee profiles with advanced filtering (Role, Status).
 - **Payroll & Salary**: detailed salary configuration with history tracking.
 - **Responsive Views**: Switch between table view (desktop) and card view (mobile).
 
 ### 🤝 Contact Management (Parties)
+
 - **Customer & Vendor Tracking**: Unified interface for managing business contacts.
 - **Ledger Overview**: Instant visibility of receivables and payables per party.
 - **Direct Actions**: Integrated call and email actions.
 
 ### 🛡️ Security & Access Control
+
 - **Granular RBAC**: Finely tuned permissions (Read, Write, Edit, Delete) for every module.
 - **Dynamic Navigation**: Sidebar menus adapt automatically based on user permissions.
 - **Secure Authentication**: Context-based auth flow with session persistence.
 
 ### 🎨 User Interface
+
 - **Custom Component Library**: Built-in, theme-aware components (Inputs, Modals, Toasts).
 - **Responsive Design**: Fully optimized for Mobile, Tablet, and Desktop.
 - **Dark/Light Mode Ready**: Structural preparation for theme switching.
@@ -69,9 +74,10 @@ A comprehensive, modern Business Management solution designed to streamline Cust
 ## 🔐 Permissions System
 
 The application uses a matrix-based permission system defined in `constants.ts`.
+
 - **Super Admin**: Full access to all modules.
 - **Admin**: Operational access (configurable).
 - **HR**: Restricted to Payroll and Document modules.
 - **Employee**: Limited to Dashboard and Profile.
 
-*Note: Default credentials for development are configured in the mock data handler.*
+_Note: Default credentials for development are configured in the mock data handler._

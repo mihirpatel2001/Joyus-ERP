@@ -6,20 +6,33 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "dependencies": {
-    "react-dom": "18.2.0",
-    "react-router-dom": "6.22.3",
-    "react": "18.2.0",
+    "@tanstack/react-query": "^5.90.11",
+    "axios": "^1.13.2",
     "lucide-react": "0.363.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-easy-crop": "5.0.5",
+    "react-router-dom": "6.22.3",
     "recharts": "2.12.3",
-    "tslib": "2.6.2",
-    "react-easy-crop": "5.0.5"
+    "tslib": "2.6.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.7.4",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
